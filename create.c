@@ -1,49 +1,33 @@
-
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
+//
+//  create.c
+//  dbms-lab3
+//
+//  Created by 冯凌璇 on 12/22/16.
+//  Copyright © 2016 冯凌璇. All rights reserved.
+//
 #include "comm.h"
-
-void parse_create(char *command_buffer,int *error_flag);
-void create_table(int col,char s[MAX_ITEMS_IN_TABLE+1][MAX_VARCHAR_LEN+1]);
-void parse_create(char *command_buffer, int *error_flag){
-	char temp_buffer_create[10];
-	char temp_buffer_table[10];
-	char temp_buffer_table_name[MAX_TABLE_NAME_LEN+1];
-	char temp_check_if_bracket_error[100];
-		//printf("%s",command_buffer);
-	sscanf(command_buffer,"%9s%9s%128s",temp_buffer_create,temp_buffer_table,temp_buffer_table_name);//用这种方法可以限定只读入一个不超过32byte的字符串（遇到空格就停，绝不会多读）
-
-	if(strcmp(temp_buffer_create,"create")!=0||strcmp(temp_buffer_table,"table")!=0){
-		*error_flag = 1;
-		return;
-		}
-	process_table_name(temp_buffer_table_name);//注意还要处理保证输入没有特殊字符比如# ￥之类的
-	if(*error_flag!=0)
-		return;
-	//读每一个域
-	//把括号之间的内容提取出来（包括空格之类的）
-	extract_items_between_brackets();
-	if(*error_flag!=0)
-		return;
-	extract_col();
-}
-
-void create_table(int col,char s[MAX_ITEMS_IN_TABLE+1][MAX_VARCHAR_LEN+1]){
+int create(char *table_name, int col, char col_name[][129], int *col_type){
     char name[128];
-    printf("%s",name);
+    sprintf(name, "./db/%s.tbl",table_name);
     if (access(name, 0) == 0){
-        printf("Can’t create table %s!\n",s[0]);
-    } else {
-        
-        FILE *fp;
-        fp = fopen(name, "w");
-        int i;
-        for (i = 1; i<=col; i++) {
-            fprintf(fp,"%s\n",s[i]);
-        }
-        printf("Successfully created table %s!\n",s[0]);
-        
-        fclose(fp);
+        printf("Can’t create table %s!\n",table_name);
+        return -1;
     }
+    table_head head;
+    head.col_num = col;
+    settypebit(col, col_type, &head);
+    head.base = (col+1)*sizeof(int);
+    head.datapage = (col<=ONE_PAGE_ITEM)?1:(col<=TWO_PAGE_ITEM)?2:(col<=THREE_PAGE_ITEM)?3:4;
+    head.freepage = head.datapage;
+    int i;
+    for (i = 0; i < col; i++) {
+        strcpy(head.col_name[i], col_name[i]);
+    }
+    FILE *fp;
+    fp = fopen(name, "wb");
+    if (fwrite(&head, sizeof(table_head), 1, fp) != 1) return -1;
+    page_init(head.freepage,fp);
+    printf("Successfully created table %s!\n",table_name);
+    fclose(fp);
+    return 0;
 }
