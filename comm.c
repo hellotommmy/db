@@ -107,6 +107,27 @@ int var_op(char *a, char *b, int op){
     return 0;
 }
 
+int agg_init (int op){
+    int res;
+    switch (op) {
+        case 1:
+            res = 0;
+            break;
+        case 2:
+            res = 0;
+            break;
+        case 4:
+            res = INT_MAX;
+            break;
+        case 5:
+            res = INT_MIN;
+            break;
+        default:
+            break;
+    }
+    return res;
+}
+
 int aggregation_op (int a, int b, int op){
     int res;
     switch (op) {
@@ -259,7 +280,7 @@ unsigned hash(int_or_char a){
     if (a.is_int) {
         return a.i % HASHSIZE;
     } else {
-    
+        
         int i = 0;
         for (hashval = 0; a.varchar[i]!='\0'; i++) {
             hashval += *(a.varchar+i) + 31;
@@ -268,21 +289,21 @@ unsigned hash(int_or_char a){
     }
 }
 
-struct nlist *lookup(int_or_char a){
+struct nlist *lookup(int_or_char a,aggregation *agg, int num){
     struct nlist *np;
     for (np = hashtab[hash(a)]; np != NULL; np = np->next) {
-         // printf("here? %d %s %s\n",a.is_int,(np->a).varchar,a.varchar);  
+        // printf("here? %d %s %s\n",a.is_int,(np->a).varchar,a.varchar);
         if ((a.is_int && ((np->a).i == a.i) )|| (!a.is_int && strcmp(a.varchar, (np->a).varchar)==0)) {
             return np;
         }
     }
-
-    np = install(a);
+    
+    np = install(a,agg,num);
     if (np != NULL) return np;
     return NULL;
 }
 
-struct nlist *install(int_or_char a ){
+struct nlist *install(int_or_char a , aggregation *agg, int num){
     struct nlist *np;
     unsigned hashval;
     
@@ -290,7 +311,14 @@ struct nlist *install(int_or_char a ){
     
     hashval = hash(a);
     np->next = NULL;
-    
+    int i;
+    for (i = 1; i <= num; i++) {
+        if (agg[i].op != 3) np->res[i] = agg_init(agg[i].op);
+        else {
+            np->res[i] = agg_init(1);
+            np->res2[i]= agg_init(2);
+        }
+    }
     hashtab[hashval] = np;
     
     return np;
@@ -362,5 +390,4 @@ int hashwrite(char *table_buff, int size, table_head head,FILE *fp, int_or_char 
     }
     return buffnum;
 }
-
 

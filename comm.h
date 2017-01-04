@@ -74,8 +74,8 @@ int writeonepage(int buffnum,char *table_buff, char *buff, table_head head, int 
 int writetobuff(char *table_buff, table_head head,FILE *fp, int_or_char constant, int *printbit, int num, int op);
 
 unsigned hash(int_or_char a);
-struct nlist *lookup(int_or_char a);
-struct nlist *install(int_or_char a );
+struct nlist *lookup(int_or_char a, aggregation *agg, int num);
+struct nlist *install(int_or_char a , aggregation *agg, int num);
 int file_size(char* filename);
 void zero(char *buff);
 void settypebit(int col, int *col_type, table_head *head);
@@ -84,6 +84,7 @@ bool_t comptypebit(int col, int_or_char *inchar,table_head head);
 void readbuff(char *buff, table_head head, int *printbit, int num, int_or_char constant, int op);
 int int_op(int a, int b, int op);
 int var_op(char *a, char *b, int op);
+int agg_init (int op);
 int aggregation_op (int a, int b, int op);
 int buff_write(char *buff, int *varoffset, int *intarry, char *varchararry, int col_num, int intnum);
 void buff_init(char *buff);

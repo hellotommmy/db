@@ -22,7 +22,7 @@
 int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *selectcol, int op, int_or_char constant){
     char name[128];
     int printbit[num+2];
-    
+    int no_group = (groupcol == '\0');
     char agg_op[6][5] = {"","sum","count","avg","min","max"};
     sprintf(name, "./db/%s.tbl",table);
     if (access(name, 0) == -1){
@@ -35,22 +35,25 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
     table_head head;
     
     fread(&head, sizeof(table_head), 1, fp);
-    
     int i,j = -1,type = 0;
-    for (i = 0; i < head.col_num; i++) {
-        if (strcmp(groupcol, head.col_name[i]) == 0){
-            printbit[0] = i;
-            if (  head.col_type[i/32] & (1 << (i%32) )  ) {
-                type = 1;
+    
+    if (!no_group) {
+        for (i = 0; i < head.col_num; i++) {
+            if (strcmp(groupcol, head.col_name[i]) == 0){
+                printbit[0] = i;
+                if (  head.col_type[i/32] & (1 << (i%32) )  ) {
+                    type = 1;
+                }
+                break;
             }
-            break;
+        }
+        if (i >= head.col_num){
+            printf("Column %s doesn’t exist\n",groupcol);
+            return -1;
         }
     }
-    
-    if (i >= head.col_num){
-        printf("Column %s doesn’t exist\n",groupcol);
-        return -1;
-    }
+        
+        
     for (j = 1; j <= num; j++) {
         for (i = 0; i < head.col_num; i++) {
             if (strcmp(agg[j].col_name, head.col_name[i]) == 0){
@@ -85,7 +88,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
             return -1;
         }
     }
-
+    
     /****** print title ******/
     printf("%s",groupcol);
     char temp_buff[MAX_TABLE_NAME_LEN*num];
@@ -128,18 +131,28 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
             for (i = 0; i < (head.col_num - head.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry[i]=0;
             memcpy(varchararry, p+(head.col_num+1)*sizeof(int), (varoffset[head.col_num - head.intnum]+1)*sizeof(char));
             
-            find.is_int = type;
-            if (type)
-                find.i = intarry[head.index[printbit[0]]];
-            else {
-                memcpy(find.varchar,varchararry+varoffset[head.index[printbit[0]]]-varoffset[0],varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]);
-                //  printf("%d\n",varoffset[head.index[printbit[0]]+1]);
-                //  printf("%d\n",varoffset[head.index[printbit[0]]]);
-                find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
-            }
-            if ((group = lookup(find) )!= NULL){
-                group->a = find;
-                //    queue_put(&queue, (node_t *)group);
+            if (!no_group) {
+                find.is_int = type;
+                if (type)
+                    find.i = intarry[head.index[printbit[0]]];
+                else {
+                    memcpy(find.varchar,varchararry+varoffset[head.index[printbit[0]]]-varoffset[0],varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]);
+                    //  printf("%d\n",varoffset[head.index[printbit[0]]+1]);
+                    //  printf("%d\n",varoffset[head.index[printbit[0]]]);
+                    find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
+                }
+                if ((group = lookup(find,agg,num) )!= NULL){
+                    group->a = find;
+
+                }
+            } else {
+                find.is_int = 0;
+                    find.varchar[0] = '\0';
+                
+                if ((group = lookup(find,agg,num) )!= NULL){
+                    group->a = find;
+
+                }
             }
             int flag = 0; //flag == 1 满足条件
             
@@ -159,7 +172,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
                 
                 
                 for (i = 1; i <= num; i++) {
-                	if (agg[i].op != 3){
+                    if (agg[i].op != 3){
                         group->res[i] = aggregation_op(group->res[i] , intarry[head.index[printbit[i]]], agg[i].op);
                     } else {
                         group->res[i] = aggregation_op(group->res[i] , intarry[head.index[printbit[i]]], 1);
@@ -183,7 +196,16 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
             } else {
                 printf("%s",(q->a).varchar);
             }
-            for (i = 1; i <=num; i++) {
+            if (!no_group) {
+                printf("|");
+            }
+            i = 1;
+            if (agg[i].op != 3) {
+                printf("%d",q->res[i]);
+            } else {
+                printf("%d",q->res[i]/q->res2[i]);
+            }
+            for (i = 2; i <=num; i++) {
                 if (agg[i].op != 3) {
                     printf("|%d",q->res[i]);
                 } else {
