@@ -7,6 +7,7 @@
 //
 #include "comm.h"
 int create(char *table_name, int col, char col_name[][129], int *col_type){
+    printf("headsize:%lu\n",sizeof(table_head));
     char name[128];
     sprintf(name, "./db/%s.tbl",table_name);
     if (access(name, 0) == 0){
