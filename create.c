@@ -6,8 +6,7 @@
 //  Copyright © 2016 冯凌璇. All rights reserved.
 //
 #include "comm.h"
-int create(char *table_name, int col, char col_name[][129], int *col_type){
-    printf("headsize:%lu\n",sizeof(table_head));
+int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int *col_type){
     char name[128];
     sprintf(name, "./db/%s.tbl",table_name);
     if (access(name, 0) == 0){

@@ -15,7 +15,7 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     int printbit[num+2];
     sprintf(name, "./db/%s.tbl",table);
     if (access(name, 0) == -1){
-        printf("Table %s doesn’t exist",table);
+        printf("Table %s doesn’t exist\n",table);
         return -1;
     }
     FILE *fp;
@@ -42,6 +42,7 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
             }
             if (i >= head.col_num){
                 printf("Column %s doesn’t exist\n",cols[j]);
+                fclose(fp);
                 return -1;
             }
         }
@@ -56,6 +57,7 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
                 if (  (head.col_type[i/32] & (1 << (i%32) ) ) ^ (constant.is_int << i%32)){
                     if (constant.is_int) printf("Predicate %d error\n",constant.i);
                     else printf("Predicate %s error\n",constant.varchar);
+                    fclose(fp);
                     return -1;
                 }
                 break;
@@ -63,6 +65,7 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
         }
         if ((i >= head.col_num)){
             printf("Column %s doesn’t exist\n",selectcol);
+            fclose(fp);
             return -1;
         }
     }
@@ -89,61 +92,11 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
         readbuff(buff, head, printbit, num, constant, op);
         pagenum++;
     }
+    fclose(fp);
     return 0;
 }
 
-int writeonepage(int buffnum,char *table_buff, char *buff, table_head head, int *printbit, int num, int_or_char constant, int op){
-    int index = sizeof(int);
-    char *p = buff;
-    p += sizeof(int);
-    while (index < *(int *)buff) {
-        int varoffset[head.col_num - head.intnum+1];
-        int intarry[head.intnum];
-        /****读出一个tuple的数据*****/
-        memcpy(varoffset, p, (head.col_num - head.intnum+1)*sizeof(int));
-        memcpy(intarry, p+(head.col_num - head.intnum+1)*sizeof(int), head.intnum*sizeof(int));
-        char varchararry[(head.col_num - head.intnum)*MAX_VARCHAR_LEN+1];
-        int i;
-        for (i = 0; i < (head.col_num - head.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry[i]=0;
-        memcpy(varchararry, p+(head.col_num+1)*sizeof(int), (varoffset[head.col_num - head.intnum]+1)*sizeof(char));
-        int flag = 0; //flag == 1 满足条件
-        if (op) {
-            if (constant.is_int) {//int
-                if (int_op(intarry[head.index[printbit[num + 1]]],constant.i,op)) flag = 1;
-            } else {//varchar
-                char temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]+1];
-                memcpy(temp, varchararry+varoffset[head.index[printbit[num + 1]]]-varoffset[0], varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]);
-                temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
-                if (var_op(temp,constant.varchar,op)) flag = 1;
-            }
-        }
-        if (flag || op == 0) {
-            while(buff_write(table_buff+buffnum*PAGE_LEN, varoffset, intarry, varchararry, head.col_num, head.intnum) == -1){
-                buffnum++;
-                buff_init(table_buff+buffnum*PAGE_LEN);
-            }
-        }
-        p += varoffset[head.col_num - head.intnum];
-        index += varoffset[head.col_num - head.intnum];
-    }
-    return buffnum;
-}
 
-int writetobuff(char *table_buff, table_head head,FILE *fp, int_or_char constant, int *printbit, int num, int op){
-    int buffnum = 0;
-    int pagenum = head.datapage;
-    char buff[PAGE_LEN];
-    zero(buff);
-    while (pagenum <= head.freepage) {
-        fseek(fp, pagenum*PAGE_LEN, SEEK_SET);
-        zero(buff);
-        fread(buff,sizeof(char), PAGE_LEN,fp);
-        buff_init(table_buff);
-        buffnum = writeonepage(buffnum,table_buff, buff, head, printbit, num, constant, op);
-        pagenum++;
-    }
-    return buffnum;
-}
 
 
 
@@ -168,19 +121,19 @@ int writetobuff(char *table_buff, table_head head,FILE *fp, int_or_char constant
  )
  */
 int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int op1, int_or_char constant1,char *selectcol2,int op2, int_or_char constant2,char *selectcol3_1,int op3, char *selectcol3_2){
-    int num1_store,num2_store;
     char name1[128];
     char name2[128];
+    int num1_store,num2_store;
     int printbit1[num1+1+num];
     int printbit2[num2+1+num];
     sprintf(name1, "./db/%s.tbl",table1);
     sprintf(name2, "./db/%s.tbl",table2);
     if (access(name1, 0) == -1){
-        printf("Table %s doesn’t exist",table1);
+        printf("Table %s doesn’t exist\n",table1);
         return -1;
     }
     if (access(name2, 0) == -1){
-        printf("Table %s doesn’t exist",table2);
+        printf("Table %s doesn’t exist\n",table2);
         return -1;
     }
     FILE *fp1;
@@ -213,6 +166,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                 }
                 if (i >= head1.col_num){
                     printf("Column %s doesn’t exist\n",cols1[j]);
+                    fclose(fp1);
+                    fclose(fp2);
                     return -1;
                 }
             }
@@ -229,6 +184,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                 }
                 if (i >= head2.col_num){
                     printf("Column %s doesn’t exist\n",cols2[j]);
+                    fclose(fp1);
+                    fclose(fp2);
                     return -1;
                 }
             }
@@ -238,6 +195,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     
     /****** judge unknown cols ******/
     if (num) {
+    
         int t;
         for (t = 1; t <= num; t++) {
             for (i = 0; i < head1.col_num; i++) {
@@ -245,6 +203,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                     for (j = 0; j < head2.col_num; j++) {
                         if (strcmp(head2.col_name[j], unknowncols[t])) {
                             printf("Ambiguous column %s\n",unknowncols[t]);
+                            fclose(fp1);
+                            fclose(fp2);
                             return  -1;
                         }
                     }
@@ -255,22 +215,29 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                 }
             }
             //在table1中没有unknown[t]
+            
             if (i >= head1.col_num) {
-                for (j = 0; i < head2.col_num; j++) {
+            
+                for (j = 0; j < head2.col_num; j++) {
+                
                     if (strcmp(head2.col_name[i], unknowncols[t]) == 0) {
                         strcpy(cols2[num2+1], unknowncols[t]);
                         num2++;
                         break;
                     }
                 }
+                 
                 if (j >= head2.col_num) {
-                    printf("Column %s doesn’t exist",unknowncols[t]);
+                    printf("Column %s doesn’t exist\n",unknowncols[t]);
+                    fclose(fp1);
+                    fclose(fp2);
                     return -1;
                 }
             }
         }
     }
-    
+    num1_store = num1;
+    num2_store = num2;
     /******* judge selectcol1 in table1 *********/
     if (op1 != 0) {
         for (i = 0; i < head1.col_num; i++) {
@@ -279,6 +246,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                 if (  (head1.col_type[i/32] & (1 << (i%32) ) ) ^ (constant1.is_int << i%32)){
                     if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
                     else printf("Predicate %s error\n",constant1.varchar);
+                    fclose(fp1);
+                    fclose(fp2);
                     return -1;
                 }
                 num1++;
@@ -287,6 +256,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
         }
         if ((i >= head1.col_num)){
             printf("Column %s doesn’t exist\n",selectcol1);
+            fclose(fp1);
+            fclose(fp2);
             return -1;
         }
     }
@@ -306,6 +277,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
         }
         if ((i >= head2.col_num)){
             printf("Column %s doesn’t exist\n",selectcol2);
+            fclose(fp1);
+            fclose(fp2);
             return -1;
         }
     }
@@ -324,6 +297,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
         }
         if ((i >= head1.col_num)){
             printf("Column %s doesn’t exist\n",selectcol3_1);
+            fclose(fp1);
+            fclose(fp2);
             return -1;
         }
     }
@@ -341,6 +316,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
         }
         if ((i >= head2.col_num)){
             printf("Column %s doesn’t exist\n",selectcol3_2);
+            fclose(fp1);
+            fclose(fp2);
             return -1;
         }
     }
@@ -349,6 +326,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     if (type1 ^ type2){ //have some problem
         if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
         else printf("Predicate %s error\n",constant2.varchar);
+        fclose(fp1);
+        fclose(fp2);
         return -1;
     }
     
@@ -366,9 +345,12 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
         }
         printf("\n");
     } else {
-        printf("%s",cols1[1]);
+        if (num1_store)
+            printf("%s",cols1[1]);
         for (j = 2; j <= num1_store; j++) printf("|%s",cols1[j]);
-        printf("|%s",cols2[1]);
+        if (num1_store && num2_store) printf("|");
+        if (num2_store)
+            printf("%s",cols2[1]);
         for (j = 2; j <= num2_store; j++) printf("|%s",cols2[j]);
         printf("\n");
     }
@@ -459,12 +441,14 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                 /****** print table1 *********/
                                 i =1;
                                 if(head1.col_type[0] & (1 << printbit1[i])){// int type
-                                    printf("%d",intarry1[head1.index[printbit1[i]]]);
+                                    if (num1_store) printf("%d",intarry1[head1.index[printbit1[i]]]);
                                 } else {
-                                    char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
-                                    memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
-                                    temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
-                                    printf("%s",temp);
+                                    if (num1_store) {
+                                        char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
+                                        memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
+                                        temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
+                                        printf("%s",temp);
+                                    }
                                 }
                                 int j = 0;
                                 for (i = 2; i <= num1_store; i++) {
@@ -480,15 +464,17 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                     }
                                 }
                                 /****** print table2 *********/
-                                printf("|");
+                                if (num1_store && num2_store) printf("|");
                                 i =1;
                                 if(head2.col_type[0] & (1 << printbit2[i])){// int type
-                                    printf("%d",intarry2[head2.index[printbit2[i]]]);
+                                    if (num2_store) printf("%d",intarry2[head2.index[printbit2[i]]]);
                                 } else {
-                                    char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
-                                    memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
-                                    temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
-                                    printf("%s",temp);
+                                    if (num2_store){
+                                        char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
+                                        memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
+                                        temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
+                                        printf("%s",temp);
+                                    }
                                 }
                                 j = 0;
                                 for (i = 2; i <= num2_store; i++) {
@@ -592,7 +578,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                 /****** print table1 *********/
                                 i =1;
                                 if(head1.col_type[0] & (1 << printbit1[i])){// int type
-                                    printf("%d",intarry1[head1.index[printbit1[i]]]);
+                                    if (num1_store) printf("%d",intarry1[head1.index[printbit1[i]]]);
                                 } else {
                                     char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
                                     memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
@@ -613,15 +599,17 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                     }
                                 }
                                 /****** print table2 *********/
-                                printf("|");
+                                if (num1_store && num2_store) printf("|");
                                 i =1;
                                 if(head2.col_type[0] & (1 << printbit2[i])){// int type
-                                    printf("%d",intarry2[head2.index[printbit2[i]]]);
+                                    if (num1_store) printf("%d",intarry2[head2.index[printbit2[i]]]);
                                 } else {
-                                    char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
-                                    memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
-                                    temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
-                                    printf("%s",temp);
+                                    if (num2_store) {
+                                        char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
+                                        memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
+                                        temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
+                                        printf("%s",temp);
+                                    }
                                 }
                                 j = 0;
                                 for (i = 2; i <= num2_store; i++) {
@@ -651,7 +639,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
             pagenum++;
         }
     }
-    
+    fclose(fp1);
+    fclose(fp2);
     return 0;
 }
 

@@ -10,7 +10,7 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
     char name[128];
     sprintf(name, "./db/%s.tbl",table_name);
     if (access(name, 0) == -1){
-        printf("Table %s doesn’t exist!\n",table_name);
+        printf("Table %s doesn’t exist\n",table_name);
         return -1;
     }
     FILE *fp;
