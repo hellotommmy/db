@@ -41,13 +41,17 @@ typedef struct{
     int freepage;
     int datapage;
     short index[MAX_ITEMS_IN_TABLE];
-    char col_name[MAX_ITEMS_IN_TABLE][MAX_VARCHAR_LEN];
+    char col_name[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN];
 }table_head;
+typedef struct {
+    int op;
+    char col_name[MAX_TABLE_NAME_LEN];
+}aggregation;
 
 int create(char *table_name, int col, char col_name[][129], int *col_type);
 int drop(char *s);
 int insert(char *table_name, int col, int_or_char *inchar);
-int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, char *table, char *seletcol, int op, int_or_char constant);
+int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, char *table, char *selectcol, int op, int_or_char constant);
 int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int op1, int_or_char constant1,char *selectcol2,int op2, int_or_char constant2,char *selectcol3_1,int op3, char *seletcol3_2);
 
 
