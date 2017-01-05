@@ -112,12 +112,16 @@ int extract_col2(arg_struct * O,char *s);
 int extract_col2(arg_struct * O,char *s){
 //	table[1]=O->table[0];
 //	table[2]=O->table[1];
+	O->which_group=0;
 	char table_name_buffer[MAX_TABLE_NAME_LEN];
-	int simple_col_number[3];
+	int simple_col_number[3]={0};
+	int agg_col_number[3]={0};
 	if(!myisalpha2(s[0]))
 		return ERROR;
 	int op =0 ;
 	general:
+	while(s[i]==' ')
+		i++;
 	if(s[i]=='s'&&s[i+1]=='u'&&s[i+2]=='m'&&(s[i+3]==' '||s[i+3]=='('))
 	{	
 		op=1;
@@ -143,13 +147,99 @@ int extract_col2(arg_struct * O,char *s){
 	{
 		op=5;
 		goto agg_check;
-	}		
+	}
+	if(!myisalpha2(s[0]))
+		return ERROR;
+	goto simple_check;
+	simple_check:
+	if(which_group!=0)//group by col exists
+		return ERROR;
+	else{
+		
+	}
 	agg_check:
-	if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]>=2)
+	if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]
+		>=2)
 		return ERROR;
 	else if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]==1){
-		//need to put simple to
+		//need to put simple to group by col
+		if(simple_col_number[0]){
+			strcpy(O->agg[0][0].col_name,O->cols[0][0]);
+			simple_col_number[0]=0;
+			O->which_group=1;
+		}
+		else if(simple_col_number[1]){
+			strcpy(O->agg[1][0].col_name,O->cols[1][0]);
+			simple_col_number[1]=0;
+			O->which_group=2;
+		}
+		else{
+			strcpy(O->agg[2][0].col_name,O->cols[2][0]);
+			simple_col_number[2]=0;
+			O->which_group=3;
+		}
+		goto aggr;
 	}
+	else{
+		goto aggr;
+	}
+
+	aggr:
+	j=0;
+	k=0;
+	if(s[i]=='('){
+		i++;
+		while(s[i]==' ')
+			i++;
+	}
+	else{
+		while(s[i]==' ')
+			i++;
+		if(s[i]!='(')
+			return ERROR;
+		i++;
+		while(s[i]==' ')
+			i++;
+	}
+	//now we are at the start of the agg col
+	while(s[i]!=' '&&s[i]!=')'){
+		if(s[i]==0)
+			return ERROR;
+		O->agg[0][O->agg_number[0]].col_name[j++]=s[i++];	
+	}
+	O->agg[0][O->agg_number[0]].col_name[j] = 0;
+	//check the column name:remove table name
+	for(j=0;O->agg[0][O->agg_number[0]].col_name[j]!=0;j++)
+		if(O->agg[0][O->agg_number[0]].col_name[j]=='.')
+		{
+			j++;
+			k=0;
+			while(O->agg[0][O->agg_number[0]].col_name[j]!=0){
+				O->agg[0][O->agg_number[0]].col_name[k++]=O->agg[0][O->agg_number[0]].col_name[j++];
+			}
+			O->agg[0][O->agg_number[0]].col_name[k]=0;
+		}
+	if(s[i]==')'){
+		i++;
+		while(s[i]==' ')
+			i++;
+	}
+	else{
+		while(s[i]==' ')
+			i++;
+		if(s[i]!=')')
+			return ERROR;
+		i++;
+		while(s[i]==' ')
+			i++;
+	}
+	agg_col_number++;
+	if(s[i]==0)
+		goto finish;
+	if(s[i]!=',')
+		return ERROR;
+	i++;
+	goto general;	
 
 }
 int extract_col1(arg_struct * O,char *s){
