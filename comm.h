@@ -53,6 +53,7 @@ typedef struct {
     int num_cols[3];//table1,t2,unknown
 
     int_or_char inchar[2];
+    int_or_char amb_inchar[2];
     int amb_join;
     char join[2][MAX_TABLE_NAME_LEN];//join columns
     char filter[2][MAX_TABLE_NAME_LEN];//filter columns
