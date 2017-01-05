@@ -42,13 +42,13 @@ int which_table(char *table1,char *table2,char *query){
 	int i=0;
 	int first_space;
 	int first_dot;
-	if(!myisalpha2(s[0]))
+	if(!myisalpha2(query[0]))
 		return ERROR;
 	while(query[i]!='.'&&query[i]!=' ')
 	{
 		if(query[i]==0)
 			return 2;
-		if(!myisalpha(s[i]))
+		if(!myisalpha(query[i]))
 			return ERROR;
 		i++;
 	}
@@ -69,7 +69,7 @@ int which_table(char *table1,char *table2,char *query){
 			if(query[i]==0)
 				return ERROR;
 			j=0;
-			while(query[i]!=' '||query[i]!=0)
+			while(query[i]!=' '&&query[i]!=0)
 				query[j++]=query[i++];
 			query[j]=0;
 			while(query[i]==' ')
@@ -86,7 +86,7 @@ int which_table(char *table1,char *table2,char *query){
 			if(query[i]==0)
 				return ERROR;
 			j=0;
-			while(query[i]!=' '||query[i]!=0)
+			while(query[i]!=' '&&query[i]!=0)
 				query[j++]=query[i++];
 			query[j]=0;
 			while(query[i]==' ')
@@ -155,7 +155,7 @@ int extract_col2(arg_struct * O,char *s){
 	if(which_group!=0)//group by col exists
 		return ERROR;
 	else{
-		
+
 	}
 	agg_check:
 	if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]
