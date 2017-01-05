@@ -69,10 +69,10 @@ typedef struct {
     char table[2][MAX_TABLE_NAME_LEN];
     char cols[3][MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN];//select col
     int num_cols[3];//table1,t2,unknown
-
+    int table_number;
     int_or_char inchar[2];
     int_or_char amb_inchar[2];
-    int amb_join;
+    int amb_join;//
     char join[2][MAX_TABLE_NAME_LEN];//join columns
     char filter[2][MAX_TABLE_NAME_LEN];//filter columns
     char amb_filter[2][MAX_TABLE_NAME_LEN];   
