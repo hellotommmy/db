@@ -27,11 +27,12 @@ int myisalpha2(char c){
 	return 0;
 }
 
-int requirement(char *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
+int requirement(char *s){
     int i,space = 0;
     char b_temp[MAX_VARCHAR_LEN];
     char a_temp[MAX_VARCHAR_LEN];
     char temp[MAX_VARCHAR_LEN];
+    char c[128];
     if(myisalpha2(s[0])==ERROR) return ERROR;
     
     for (i = 0; s[i]!='\0';i++){
@@ -43,37 +44,20 @@ int requirement(char *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NA
     sscanf (s,"%s %s %s",a_temp,b_temp,temp);
     if (temp[0]=='\'') {
     	for (i = 1; temp[i]!='\'';i++){
-    	printf("%d\n",i);
     		if (i >= strlen(temp)) return ERROR;
     	}
     	if (temp[i+1]!='\0') return ERROR;
-    	c->is_int = 0;
-    	sscanf(temp,"%s",c->varchar);
-    } else {
-    
-    	for (i = 0; temp[i]!='\0';i++) {
-    		if (temp[i]<'0'||temp[i]>'9')
-    			return ERROR;
-    	}
-    	c->is_int = 1;
-    	c->i = atoi(temp);
-    }
-    
-    if((*t = which_table(table1,table2,a_temp))==ERROR) return ERROR;
-    
-    if (c->is_int){
-    	if(strcmp("<",b_temp)==0) {*b = 1;return 0;}
-    	if(strcmp("<=",b_temp)==0) {*b = 2;return 0;}
-    	if(strcmp(">",b_temp)==0) {*b = 3;return 0;}
-    	if(strcmp(">=",b_temp)==0) {*b = 4;return 0;}
-    	if(strcmp("=",b_temp)==0) {*b = 5;return 0;}
-    	if(strcmp("!=",b_temp)==0) {*b = 6;return 0;}
-    }else {
-    	if(strcmp("=",b_temp)==0) {*b = 7;return 0;}
-    	if(strcmp("!=",b_temp)==0) {*b = 8;return 0;}
-    	if(strcmp("like",b_temp)==0) {*b = 9;return 0;}
-    	if(strcmp("not like",b_temp)==0) {*b = 10;return 0;}
-    }
-    return ERROR;
+    	temp[i]='\0';
+    	sscanf(temp,"'%s",c);
+    	printf("%s\n",c);
+    }	
+    return 0;
+}
+
+int main(){
+	char s[128];
+	sprintf(s,"id = '3'");
+	requirement(s);
+	return 0;
 }
 

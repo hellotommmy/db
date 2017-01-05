@@ -269,9 +269,11 @@ int writetobuff(char *table_buff, table_head head,FILE *fp, int_or_char constant
         zero(buff);
         fread(buff,sizeof(char), PAGE_LEN,fp);
         buff_init(table_buff);
+        
         buffnum = writeonepage(buffnum,table_buff, buff, head, printbit, num, constant, op);
         pagenum++;
     }
+    
     return buffnum;
 }
 
@@ -400,5 +402,3 @@ int hashwrite(char *table_buff, int size, table_head head,FILE *fp, int_or_char 
     }
     return buffnum;
 }
-
-

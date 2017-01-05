@@ -25,7 +25,8 @@ int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABL
     }
     FILE *fp;
     fp = fopen(name, "wb");
-    if (fwrite(&head, sizeof(table_head), 1, fp) != 1) return -1;
+    int size = head.datapage*PAGE_LEN;
+    if (fwrite(&head, sizeof(size), 1, fp) != 1) return -1;
     page_init(head.freepage,fp);
     printf("Successfully created table %s!\n",table_name);
     fclose(fp);

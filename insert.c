@@ -81,3 +81,4 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
     fclose(fp);
     return 0;
 }
+
