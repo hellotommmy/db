@@ -29,60 +29,675 @@ int myisalpha3(char *c);
 int myisalpha4(char *c);
 int check_and(char *c);
 int check_scolon(char *s);
+int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_flag[6]);
 int group_check(char * ,arg_struct *O,int mode);
 int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct *O);
-int filter(arg_struct *O,char *s);
-int filter(arg_struct *O,char *s){
-	
+int filter(arg_struct *O,char *s,int mode);
+int isnumber(char c);
+int myisalpha1(char c);
+int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN],int *op,char constant[MAX_VARCHAR_LEN]);
+int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN],int *op,char constant[MAX_VARCHAR_LEN]){
+	//return 0 for 1 table
+	//return 1 for table 1 filtering
+	//2 for table 2
+	//3 for ambiguous col
+	//4 for join
+	//-1 for error
+	int i=0;
+	int j=0;
+	if(table2[0]==0)
+		goto one_table;
+
+	while(s[i]==' ')
+		i++;
+	if(!myisalpha2(s[i]))
+		return ERROR;
+	int dot_flag[2]={0};
+	while(s[i]!='<'&&s[i]!='>'&&s[i]!='='&&s[i]!=' '){
+		if(s[i]=='.'){
+			dot_flag[0]=i;
+			i++;
+			col[j]=0;
+			break;
+		}
+		if(!(myisalpha1(s[i])))
+			return ERROR;
+		col[j++]=s[i++];
+	}
+	while(s[i]==' ')
+		i++;
+	if(s[i]=='.'){
+		col[j]=0;
+		dot_flag[0]=i;
+		i++;
+		while(s[i]==' ')
+			i++;
+	}	
+	int which_table[2]={0};
+	if(0!=dot_flag[0]){
+		which_table[0]=(strcmp(table1,col)==0);
+		which_table[1]=(strcmp(table2,col)==0);
+		if(which_table[0]==0&&which_table[1]==0)
+			return ERROR;
+		if(!myisalpha1(s[i]))
+			return ERROR;
+		j=0;
+		while(s[i]!=' '&&s[i]!='<'&&s[i]!='='&&s[i]!='>'){
+			if(myisalpha1(s[i])==0)
+				return ERROR;
+			if(which_table[0])//table 1's filter or join
+				col[j++]=s[i++];
+			else
+				constant[j++]=s[i++];//table 2's filter or join
+		}
+		if(which_table[0])
+			col[j]=0;
+		else
+			constant[j]=0;	
+	}
+	else{
+		col[j]=0;
+	}
+	int small_flag=0;
+	int big_flag=0;
+	int equal_flag=0;
+	int like_flag=0;
+	int not_like_flag=0;
+	int not_equal_flag=0;
+	while(s[i]==' ')
+		i++;
+	while(s[i]!=' '){
+		switch(s[i]){
+			case '!':
+			not_equal_flag=1;
+			if(s[i+1]!='=')
+				return ERROR;
+			i+=2;
+			goto outside_while;
+			case '<':
+			if(small_flag||big_flag||equal_flag)
+				return ERROR;
+			i++;
+			small_flag=1;
+			break;
+			case '=':
+			equal_flag=1;
+			if(small_flag&&big_flag)
+				return ERROR;
+			i++;
+			goto outside_while;
+			break;
+			case '>':
+			if(small_flag||big_flag||equal_flag)
+				return ERROR;
+			i++;
+			big_flag=1;
+			break;
+			case 'l':
+			if(s[i+1]=='i'&&s[i+2]=='k'&&s[i+3]=='e'&&s[i+4]==' ')
+				i+=5;
+			else
+				return ERROR;
+			like_flag=1;
+			goto outside_while;				
+			break;
+			case 'n':
+			if(s[i+1]=='o'&&s[i+2]=='t'&&s[i+3]==' '){				
+				i+=4;
+				while(s[i]==' ')
+					i++;
+				if(s[i]=='l'&&s[i+1]=='i'&&s[i+2]=='k'&&s[i+3]=='e'&&s[i+4]==' ')
+				{
+					i+=5;
+					not_like_flag=1;
+					goto outside_while;
+				}
+				else
+					return ERROR;
+			}
+			else
+				return ERROR;
+			return ERROR;
+			default:
+			return ERROR;			
+		}
+	}
+	outside_while:
+	while(s[i]==' ')
+		i++;
+	j=0;
+	if(like_flag==1){
+		if(big_flag||small_flag)
+			return ERROR;
+		*op=9;
+		if(s[i]!='\'')
+			return ERROR;
+		i++;
+		while(s[i]!='\''){
+			if(s[i]==0)
+				return ERROR;			
+			if(which_table[1])
+				col[j++]=s[i++];
+			else
+				constant[j++]=s[i++];
+		}
+		if(which_table[1]){
+			col[j]=0;
+			return 2;
+		}
+		else if(which_table[0]){
+			constant[j]=0;
+			return 1;
+		}
+		else{
+			constant[j]=0;
+			return 3;
+		}
+	}
+	if(not_like_flag==1){
+		if(big_flag||small_flag)
+			return ERROR;
+		*op=10;
+		if(s[i]!='\'')
+			return ERROR;
+		i++;
+		while(s[i]!='\''){
+			if(s[i]==0)
+				return ERROR;			
+			if(which_table[1])
+				col[j++]=s[i++];
+			else
+				constant[j++]=s[i++];
+		}
+		if(which_table[1]){
+			col[j]=0;
+			return 2;
+		}
+		else if(which_table[0]){
+			constant[j]=0;
+			return 1;	
+		}
+		else{
+			constant[j]=0;
+			return 3;
+		}
+	}
+	if(equal_flag){
+		if(small_flag){
+			//<=
+			*op=2;
+			while(s[i]!=' '&&s[i]!=0)
+			{
+				if(which_table[1])
+					col[j++]=s[i++];
+				else
+					constant[j++]=s[i++];
+			}
+			if(which_table[1]){
+				col[j]=0;
+				return 2;
+			}
+			else if(which_table[0]){
+				constant[j]=0;
+				return 1;
+			}
+			else{
+				constant[j]=0;
+				return 3;
+			}
+		}
+		else if(big_flag){
+			//>=
+			*op=4;
+			while(s[i]!=' '&&s[i]!=0)
+			{
+				if(which_table[1])
+					col[j++]=s[i++];
+				else
+					constant[j++]=s[i++];
+			}
+			if(which_table[1]){
+				col[j]=0;
+				return 2;
+			}
+			else if(which_table[0]){
+				constant[j]=0;
+				return 1;
+			}
+			else{
+				constant[j]=0;
+				return 3;
+			}
+		}
+		else{
+			//real equal
+			//check if is string
+			if(myisalpha2(s[i])){
+				goto join;
+			}
+			else if(s[i]=='\''){
+				i++;
+				*op=7;
+				while(s[i]!='\''){
+					if(s[i]==0)
+						return ERROR;			
+					if(which_table[1])
+						col[j++]=s[i++];
+					else
+						constant[j++]=s[i++];
+				}
+				if(which_table[1]){
+					col[j]=0;
+					return 2;
+				}
+				else if(which_table[0]){
+					constant[j]=0;
+					return 1;
+				}
+				else{
+					constant[j]=0;
+					return 3;
+				}
+			}
+			else{
+				if(isnumber(s[i])){
+					*op=5;
+					while(s[i]!='\0'&&s[i]!=' '){
+						if(!(isnumber(s[i])))
+							return ERROR;			
+						if(which_table[1])
+							col[j++]=s[i++];
+						else
+							constant[j++]=s[i++];
+					}
+					if(which_table[1]){
+						col[j]=0;
+						return 2;
+					}
+					else if(which_table[0]){
+						constant[j]=0;
+						return 1;
+					}
+					else{
+						constant[j]=0;
+						return 3;
+					}
+				}
+				else
+					return ERROR;
+			}
+		}
+	}
+	if(not_equal_flag){
+		if(s[i]=='\''){
+			i++;
+			*op=8;
+			while(s[i]!='\''){
+				if(s[i]==0)
+					return ERROR;			
+				if(which_table[1])
+					col[j++]=s[i++];
+				else
+					constant[j++]=s[i++];
+			}
+			if(which_table[1]){
+				col[j]=0;
+				return 2;
+			}
+			else if(which_table[0]){
+				constant[j]=0;
+				return 1;
+			}
+			else{
+				constant[j]=0;
+				return 3;
+			}
+		}
+		else if(isnumber(s[i])){
+			*op=6;
+			while(s[i]!='\0'&&s[i]!=' '){
+				if(!(isnumber(s[i])))
+					return ERROR;			
+				if(which_table[1])
+					col[j++]=s[i++];
+				else
+					constant[j++]=s[i++];
+			}
+			if(which_table[1]){
+				col[j]=0;
+				return 2;
+			}
+			else if(which_table[0]){
+				constant[j]=0;
+				return 1;
+			}
+			else{
+				constant[j]=0;
+				return 3;
+			}
+		}
+		else
+			return ERROR;
+	}
+	if(small_flag){
+		//<
+		*op=1;
+		if(isnumber(s[i])){
+			while(s[i]!='\0'&&s[i]!=' '){
+				if(!(isnumber(s[i])))
+					return ERROR;			
+				if(which_table[1])
+					col[j++]=s[i++];
+				else
+					constant[j++]=s[i++];
+			}
+			if(which_table[1]){
+				col[j]=0;
+				return 2;
+			}
+			else if(which_table[0]){
+				constant[j]=0;
+				return 1;
+			}
+			else{
+				constant[j]=0;
+				return 3;
+			}
+		}
+		else
+			return ERROR;
+	}
+	if(big_flag){
+		*op=3;
+		if(isnumber(s[i])){
+			while(s[i]!='\0'&&s[i]!=' '){
+				if(!(isnumber(s[i])))
+					return ERROR;			
+				if(which_table[1])
+					col[j++]=s[i++];
+				else
+					constant[j++]=s[i++];
+			}
+			if(which_table[1]){
+				col[j]=0;
+				return 2;
+			}
+			else if(which_table[0]){
+				constant[j]=0;
+				return 1;
+			}
+			else{
+				constant[j]=0;
+				return 3;
+			}
+		}
+		else
+			return ERROR;		
+	}
+	return 0;
+	join:
+	j=0;
+	if(which_table[0]==1&&which_table[1]==1)
+		return ERROR;
+	if(which_table[0]==1){
+		//table 1 is chosen
+		//need to choose table 2
+		while(s[i]!=' '&&s[i]!='\0'){
+			if(s[i]=='.'){
+				dot_flag[1]=i;
+				i++;
+				constant[j]=0;
+				break;
+			}
+			if(!(myisalpha1(s[i])))
+				return ERROR;
+			constant[j++]=s[i++];
+		}
+		while(s[i]==' ')
+			i++;
+		if(s[i]=='.'){
+			constant[j]=0;
+			dot_flag[1]=i;
+			i++;
+			while(s[i]==' ')
+				i++;
+		}	
+		if(0!=dot_flag[1]){
+			which_table[1]=(strcmp(table2,constant)==0);
+			if(which_table[1]==0)
+				return ERROR;
+			if(!myisalpha1(s[i]))
+				return ERROR;
+			j=0;
+			while(s[i]!=' '&&s[i]!=0){
+				if(myisalpha1(s[i])==0)
+					return ERROR;
+				constant[j++]=s[i++];//table 2's filter or join
+			}
+		}
+		constant[j]=0;
+		return 4;
+	}
+	else if(which_table[1]){
+		//table 2 is chosen
+		//need to choose table 1
+		while(s[i]!=' '&&s[i]!='\0'){
+			if(s[i]=='.'){
+				dot_flag[1]=i;
+				i++;
+				col[j]=0;
+				break;
+			}
+			if(!(myisalpha1(s[i])))
+				return ERROR;
+			col[j++]=s[i++];
+		}
+		while(s[i]==' ')
+			i++;
+		if(s[i]=='.'){
+			col[j]=0;
+			dot_flag[1]=i;
+			i++;
+			while(s[i]==' ')
+				i++;
+		}	
+		if(0!=dot_flag[1]){
+			//if table name specified, should be the same with table1
+			which_table[0]=(strcmp(table1,col)==0);
+			if(which_table[0]==0)
+				return ERROR;
+			if(!myisalpha1(s[i]))
+				return ERROR;
+			j=0;
+			while(s[i]!=' '&&s[i]!=0){
+				if(myisalpha1(s[i])==0)
+					return ERROR;
+				col[j++]=s[i++];//table 2's filter or join
+			}
+		}
+		col[j]=0;
+		return 4;		
+	}
+	else{
+		int match;
+		while(s[i]!=' '&&s[i]!='\0'){
+			if(s[i]=='.'){
+				dot_flag[1]=i;
+				i++;
+				constant[j]=0;
+				break;
+			}
+			if(!(myisalpha1(s[i])))
+				return ERROR;
+			constant[j++]=s[i++];
+		}
+		while(s[i]==' ')
+			i++;
+		if(s[i]=='.'){
+			constant[j]=0;
+			dot_flag[1]=i;
+			i++;
+			while(s[i]==' ')
+				i++;
+		}	
+		if(0!=dot_flag[1]){
+			if(strcmp(table1,constant)==0)
+				match = 1;
+			else{
+				if(strcmp(table2,constant)!=0)
+					*amb_join=1;
+				match = 2;
+			}
+			if(match==2){
+				if(!myisalpha1(s[i]))
+					return ERROR;
+				j=0;
+				while(s[i]!=' '&&s[i]!=0){
+					if(myisalpha1(s[i])==0)
+						return ERROR;
+					constant[j++]=s[i++];//table 2's filter or join
+				}
+			}
+			else{
+				//match==1,need to shift 2 table's orders
+				//char temp[MAX_VARCHAR_LEN];
+				//strcpy(temp,col);
+				strcpy(constant,col);
+				if(!myisalpha1(s[i]))
+					return ERROR;
+				j=0;
+				while(s[i]!=' '&&s[i]!=0){
+					if(myisalpha1(s[i])==0)
+						return ERROR;
+					col[j++]=s[i++];//table 2's filter or join
+				}
+				col[j]=0;
+				return 4;				
+			}
+		}
+		constant[j]=0;
+		return 4;
+	}
+	one_table:
+	i=0;
+	while(s[i]!='.'){
+		i++;
+		if(s[i]==0)
+			break;
+	}
+	if(s[i]==0){
+		//no col_name
+		i=0;
+		while(s[i]!=0&&s[i]!=' ' )
+			{col[i]=s[i];i++;}
+		s[i]=0;
+	}
+	else{
+		j=0;
+		i++;
+		while(s[i]==' ')
+			i++;
+		while(s[i]!=' '&&s[i]!=0)
+			col[j++]=s[i++];
+		col[j]=0;
+	}
+	return 1;
 }
-int requirement(int *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c);
-int requirement(int *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
-    int i,space = 0;
-    char b_temp[MAX_VARCHAR_LEN];
-    char temp[MAX_VARCHAR_LEN];
-    if(myisalpha2(s[0])==ERROR) return ERROR;
-    
-    for (i = 0; s[i]!='\0';i++){
-    	if(s[i]==' ') space ++;
-    }
-    
-    if (space != 2) return ERROR;
-    
-    sscanf (s,"%s %s %s",a,b_temp,temp);
-    if (temp[0]=='\'') {
-    	for (i = 1; temp[i]!='\'';i++){
-    	printf("%d\n",i);
-    		if (i >= strlen(temp)) return ERROR;
-    	}
-    	if (temp[i+1]!='\0') return ERROR;
-    	c->is_int = 0;
-    	sscanf(temp,"%s",c->varchar);
-    } else {
-    
-    	for (i = 0; temp[i]!='\0';i++) {
-    		if (temp[i]<'0'||temp[i]>'9')
-    			return ERROR;
-    	}
-    	c->is_int = 1;
-    	c->i = atoi(temp);
-    }
-    
-    if((*t = which_table(table1,table2,a))==ERROR) return ERROR;
-    
-    if (c->is_int){
-    	if(strcmp("<",b_temp)==0) {*b = 1;return 0;}
-    	if(strcmp("<=",b_temp)==0) {*b = 2;return 0;}
-    	if(strcmp(">",b_temp)==0) {*b = 3;return 0;}
-    	if(strcmp(">=",b_temp)==0) {*b = 4;return 0;}
-    	if(strcmp("=",b_temp)==0) {*b = 5;return 0;}
-    	if(strcmp("!=",b_temp)==0) {*b = 6;return 0;}
-    }else {
-    	if(strcmp("=",b_temp)==0) {*b = 7;return 0;}
-    	if(strcmp("!=",b_temp)==0) {*b = 8;return 0;}
-    	if(strcmp("like",b_temp)==0) {*b = 9;return 0;}
-    	if(strcmp("not like",b_temp)==0) {*b = 10;return 0;}
-    }
-    return ERROR;
+
+int myisalpha1(char c){
+//check the start of a variable, no numbers
+	if('a'<=c&&c<='z')
+		return 1;
+	if('A'<=c&&c<='Z')
+		return 1;
+	if('0'<=c&&c<='9')
+		return 1;
+	if(c=='_')
+		return 1;
+	return 0;
+}
+int isnumber(char c){
+	if('0'<=c&&c<='9')
+		return 1;
+	else
+		return 0;	
+}
+int filter(arg_struct *O,char *s,int mode){
+	int status;
+	int op;
+	int amb_join=0;
+	char col_buff[MAX_TABLE_NAME_LEN];
+	char constant_buff[MAX_VARCHAR_LEN];
+	if(mode==2){
+		status=cut(&amb_join,O->table[0],O->table[1],s,col_buff,&op,constant_buff);
+		if(status==ERROR)
+			return ERROR;
+		if(status==4){
+			O->amb_join = amb_join;
+			strcpy(O->join[0],col_buff);
+			strcpy(O->join[1],constant_buff);
+		}
+		else if(status==3){
+			if(O->amb_op[0]){
+				O->amb_op[0]=op;
+				strcpy(O->amb_filter[0],col_buff);
+				if(op>=1&&op<=6){
+					//int
+					O->amb_inchar[0].is_int=TRUE;
+					O->amb_inchar[0].i=atoi(constant_buff);
+				}
+				else{
+					O->amb_inchar[0].is_int=FALSE;
+					strcpy(O->amb_inchar[0].varchar,constant_buff);
+				}				
+			}
+			else{
+				O->amb_op[1]=op;
+				strcpy(O->amb_filter[1],col_buff);
+				if(op>=1&&op<=6){
+					//int
+					O->amb_inchar[1].is_int=TRUE;
+					O->amb_inchar[1].i=atoi(constant_buff);
+				}
+				else{
+					O->amb_inchar[1].is_int=FALSE;
+					strcpy(O->amb_inchar[1].varchar,constant_buff);
+				}	
+			}
+		}
+		else{
+			O->op[status-1]=op;
+			strcpy(O->filter[status-1],col_buff);
+			if(op>=1&&op<=6){
+				//int
+				O->inchar[status-1].is_int=TRUE;
+				O->inchar[status-1].i=atoi(constant_buff);
+			}
+			else{
+				O->inchar[status-1].is_int=FALSE;
+				strcpy(O->inchar[status-1].varchar,constant_buff);
+			}
+		}	
+	}
+	if(mode==1){
+		if(O->op[0]||O->op[1]||O->op[2])//only 1 col should exist
+			return ERROR;
+		status = cut(&amb_join,O->table[0],O->table[1],s,col_buff,&op,constant_buff);
+		if(status==ERROR||status==4)
+			return ERROR;
+		O->op[0]=op;
+		strcpy(O->filter[0],col_buff);
+		if(op>=1&&op<=6){
+			//int
+			O->inchar[0].is_int=TRUE;
+			O->inchar[0].i=atoi(constant_buff);
+		}
+		else{
+			O->inchar[0].is_int=FALSE;
+			strcpy(O->inchar[0].varchar,constant_buff);
+		}
+		return OK;
+	}
 }
 
 int group_check(char *s ,arg_struct *O,int mode){
@@ -769,6 +1384,7 @@ int how_many_tb(char *s,arg_struct *O){
 	O->table[1][j]=0;	
 	return 2;
 }
+/*
 int main(int argc, char const *argv[])
 {
 	char s[4][200] ={"select tab1.id, max(count) from tab1, tab2 where tab1.id = tab2.id and count <= 30 and tab1.id!=0 group by tab1.id;",
@@ -803,6 +1419,20 @@ int main(int argc, char const *argv[])
 			printf("syntax error\n");
 	}
 	return 0;
+}*/
+int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_flag[6]){
+		int how_many;
+		if(format_check(s,middle_buffer,sign_flag)!=ERROR){	
+			if((how_many=parse_select_begin(middle_buffer,sign_flag,O))!=ERROR)
+			{
+				return OK;
+			}
+			else{
+				return ERROR;
+			}
+		}
+		else
+			return ERROR;	
 }
 int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct *O){
 	int table_number;
@@ -811,6 +1441,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	int i,j;
 	memset(O,0,sizeof(arg_struct));
 	table_number = how_many_tb(middle_buffer[1],O);
+	O->table_number=table_number;
 	if(table_number==ERROR)
 		return ERROR;
 	if(table_number==2){
@@ -830,9 +1461,22 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 		if(group_by_res==ERROR)
 			return ERROR;
 	}
+	int filter_res;
 	if(sign_flag[2]){
-		//filter_res = 
+		filter_res = filter(O,middle_buffer[2],table_number); 
+		if(filter_res==ERROR)
+			return ERROR;
 	}	
+	if(sign_flag[3]){
+		filter_res = filter(O,middle_buffer[3],table_number); 
+		if(filter_res==ERROR)
+			return ERROR;
+	}
+	if(sign_flag[4]){
+		filter_res = filter(O,middle_buffer[4],table_number); 
+		if(filter_res==ERROR)
+			return ERROR;
+	}		
 	printf("current info:\n");
 	printf("tables:\n" );
 	for(i=0;i<2;i++){
