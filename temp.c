@@ -1,4 +1,5 @@
 //#include "comm.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #define MAX_TABLE_NAME_LEN 128
@@ -26,11 +27,12 @@ int myisalpha2(char c){
 	return 0;
 }
 
-int requirement(char *s, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
+int requirement(char *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
     int i,space = 0;
     char b_temp[MAX_VARCHAR_LEN];
+    char a_temp[MAX_VARCHAR_LEN];
     char temp[MAX_VARCHAR_LEN];
-    if(!myisalpha2(s[0])) return ERROR;
+    if(myisalpha2(s[0])==ERROR) return ERROR;
     
     for (i = 0; s[i]!='\0';i++){
     	if(s[i]==' ') space ++;
@@ -38,7 +40,7 @@ int requirement(char *s, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
     
     if (space != 2) return ERROR;
     
-    sscanf (s,"%s %s %s",a,b_temp,temp);
+    sscanf (s,"%s %s %s",a_temp,b_temp,temp);
     if (temp[0]=='\'') {
     	for (i = 1; temp[i]!='\'';i++){
     	printf("%d\n",i);
@@ -56,6 +58,9 @@ int requirement(char *s, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
     	c->is_int = 1;
     	c->i = atoi(temp);
     }
+    
+    if((*t = which_table(table1,table2,a_temp))==ERROR) return ERROR;
+    
     if (c->is_int){
     	if(strcmp("<",b_temp)==0) {*b = 1;return 0;}
     	if(strcmp("<=",b_temp)==0) {*b = 2;return 0;}
@@ -72,14 +77,3 @@ int requirement(char *s, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
     return ERROR;
 }
 
-int main(){
-	char s[128];
-	char a[MAX_TABLE_NAME_LEN];
-	int b;
-	int_or_char c;
-	strcpy(s,"id = 3");
-	int res = requirement(s, a,&b,&c);
-
-    printf("%d %d\n",b,res);
-	return 0;
-}
