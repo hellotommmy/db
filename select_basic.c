@@ -29,7 +29,131 @@ int myisalpha3(char *c);
 int myisalpha4(char *c);
 int check_and(char *c);
 int check_scolon(char *s);
+int group_check(char * ,arg_struct *O,int mode);
 int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct *O);
+int filter(arg_struct *O,char *s);
+int filter(arg_struct *O,char *s){
+	
+}
+int requirement(int *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c);
+int requirement(int *t,char *s, char *table1, char *table2, char a[MAX_TABLE_NAME_LEN], int *b, int_or_char *c){
+    int i,space = 0;
+    char b_temp[MAX_VARCHAR_LEN];
+    char temp[MAX_VARCHAR_LEN];
+    if(myisalpha2(s[0])==ERROR) return ERROR;
+    
+    for (i = 0; s[i]!='\0';i++){
+    	if(s[i]==' ') space ++;
+    }
+    
+    if (space != 2) return ERROR;
+    
+    sscanf (s,"%s %s %s",a,b_temp,temp);
+    if (temp[0]=='\'') {
+    	for (i = 1; temp[i]!='\'';i++){
+    	printf("%d\n",i);
+    		if (i >= strlen(temp)) return ERROR;
+    	}
+    	if (temp[i+1]!='\0') return ERROR;
+    	c->is_int = 0;
+    	sscanf(temp,"%s",c->varchar);
+    } else {
+    
+    	for (i = 0; temp[i]!='\0';i++) {
+    		if (temp[i]<'0'||temp[i]>'9')
+    			return ERROR;
+    	}
+    	c->is_int = 1;
+    	c->i = atoi(temp);
+    }
+    
+    if((*t = which_table(table1,table2,a))==ERROR) return ERROR;
+    
+    if (c->is_int){
+    	if(strcmp("<",b_temp)==0) {*b = 1;return 0;}
+    	if(strcmp("<=",b_temp)==0) {*b = 2;return 0;}
+    	if(strcmp(">",b_temp)==0) {*b = 3;return 0;}
+    	if(strcmp(">=",b_temp)==0) {*b = 4;return 0;}
+    	if(strcmp("=",b_temp)==0) {*b = 5;return 0;}
+    	if(strcmp("!=",b_temp)==0) {*b = 6;return 0;}
+    }else {
+    	if(strcmp("=",b_temp)==0) {*b = 7;return 0;}
+    	if(strcmp("!=",b_temp)==0) {*b = 8;return 0;}
+    	if(strcmp("like",b_temp)==0) {*b = 9;return 0;}
+    	if(strcmp("not like",b_temp)==0) {*b = 10;return 0;}
+    }
+    return ERROR;
+}
+
+int group_check(char *s ,arg_struct *O,int mode){
+	if(mode==2){
+		if(O->which_group==0)
+			return ERROR;
+		int i=0,j=0;
+		char buffer[MAX_TABLE_NAME_LEN];
+		memset(buffer,0,MAX_TABLE_NAME_LEN);
+		while(s[i]==' ')
+			i++;
+		if(!myisalpha2(s[i]))
+			return ERROR;
+		while(s[i]!=' '&&s[i]!=','&&s[i]!='.'&&s[i]!=0){
+			buffer[j++]=s[i++];
+		}
+		buffer[j]=0;
+		while(s[i]==' ')
+			i++;
+		if(s[i]==',')
+			goto need_more_info;
+		if(s[i]==0)
+			goto need_more_info;
+		i++;
+		while(s[i]==' ')
+			i++;
+		buffer[j]='.';
+		j++;
+		while(s[i]!=' '&&s[i]!=0)
+			buffer[j++]=s[i++];
+		int result;
+		result=which_table(O->table[0],O->table[1],buffer)+1;
+		if(result==4||result==ERROR)
+			return ERROR;
+		if(result==3)
+			goto need_more_info;
+		else{
+			if(O->which_group!=3){
+				//if which group = result, not 3, nothing to do
+				if(result!=O->which_group)
+					return ERROR;
+				else
+					return result;
+			}
+			else{
+				O->which_group=result;
+				strcpy(O->agg[O->which_group][0].col_name,O->agg[2][0].col_name);
+				return result;
+			}
+		}
+		need_more_info:
+		if(O->which_group==3)
+			goto final_ambig;
+		else
+			return O->which_group;
+		final_ambig:
+		//no need to do operation since have ended
+		return 3;
+	}
+	else if(mode==1){
+		//default 1 table
+		if(O->which_group==0)
+			return ERROR;
+		if(strcmp(O->group_col,s)!=0)
+			return ERROR;
+		strcpy(O->agg[0][0].col_name,O->group_col);
+		return OK;
+	}
+	else
+		return ERROR;
+}
 int which_table(char *table1,char *table2,char *query){
 	//return 0 if table1, 1 if table 2,2 if unknown
 	//meanwhile, cut table name from query
@@ -37,9 +161,11 @@ int which_table(char *table1,char *table2,char *query){
 	//return 1, and query=id after return
 	//return ERROR if query format wrong, e.g t.a.d, t#d
 	//3 if *
+	int i=0;	
+	while(query[i]==' ')
+		i++;
 	if(query[0]=='*')
 		return 3;
-	int i=0;
 	int first_space;
 	int first_dot;
 	if(!myisalpha2(query[0]))
@@ -112,14 +238,22 @@ int extract_col2(arg_struct * O,char *s);
 int extract_col2(arg_struct * O,char *s){
 //	table[1]=O->table[0];
 //	table[2]=O->table[1];
+	int i,j,k;
+	char buffer[MAX_TABLE_NAME_LEN];
 	O->which_group=0;
 	char table_name_buffer[MAX_TABLE_NAME_LEN];
 	int simple_col_number[3]={0};
 	int agg_col_number[3]={0};
-	if(!myisalpha2(s[0]))
+	int table_res;
+	if(!myisalpha2(s[0])){
+		if(s[0]=='*'&&s[1]==0){
+			goto finish;
+		}
 		return ERROR;
+	}
 	int op =0 ;
 	general:
+	op = 0;
 	while(s[i]==' ')
 		i++;
 	if(s[i]=='s'&&s[i+1]=='u'&&s[i+2]=='m'&&(s[i+3]==' '||s[i+3]=='('))
@@ -148,33 +282,114 @@ int extract_col2(arg_struct * O,char *s){
 		op=5;
 		goto agg_check;
 	}
-	if(!myisalpha2(s[0]))
+	if(!myisalpha2(s[i]))
 		return ERROR;
-	goto simple_check;
-	simple_check:
-	if(which_group!=0)//group by col exists
+	//goto simple_check;
+	//simple_check:
+	if(O->which_group!=0)//group by col exists
 		return ERROR;
-	else{
+	else if(agg_col_number[0]+agg_col_number[1]+agg_col_number[2]>=1){
+		//group by col
+		j=0;
+		memset(buffer,0,MAX_TABLE_NAME_LEN);
+		while(s[i]!='.'&&s[i]!=' '&&s[i]!=0&&s[i]!=',')
+			buffer[j++]=s[i++];
+		while(s[i]==' ')
+			i++;
+		if(s[i]==0){
+			buffer[j]=0;
+			strcpy(O->agg[2][0].col_name,buffer);//2-unknown col
+			O->which_group=3;
+			goto finish;
+		}
+		if(s[i]=='.'){
+			buffer[j++]=s[i++];
+			while(s[i]!=' '&&s[i]!=','&&s[i]!=0){
+				if(!myisalpha(s[i]))
+					return ERROR;
+				buffer[j++]=s[i++];
+			}
+			buffer[j]=0;
+			table_res = which_table(O->table[0],O->table[1],buffer);
+			if(table_res==ERROR||table_res==3)
+				return ERROR;
+			//simple_col_number[table_res]++;
+			//strcpy(O->cols[table_res][simple_col_number[table_res]],buffer);
+			O->which_group=table_res+1;
+			strcpy(O->agg[table_res][0].col_name,buffer);
+			while(s[i]==' ')
+				i++;
+			if(s[i]==','){
+				i++;
+				goto general;
+			}
+			if(s[i]==0)
+				goto finish;
+			return ERROR;
+		}
+		if(s[i]==','){
+			i++;
+			buffer[j]=0;
+			strcpy(O->agg[2][0].col_name,buffer);//2-unknown col
+			O->which_group=3;
+			goto general;
+		}
+		return ERROR;
 
 	}
+	else{
+		//simple col
+		j=0;
+		memset(buffer,0,MAX_TABLE_NAME_LEN);
+		while(s[i]!=0&&s[i]!=',')
+			buffer[j++]=s[i++];
+		buffer[j]=0;
+		table_res = which_table(O->table[0],O->table[1],buffer);
+			if(table_res==ERROR||table_res==3)
+				return ERROR;
+			//simple_col_number[table_res]++;
+			//strcpy(O->cols[table_res][simple_col_number[table_res]],buffer);
+			simple_col_number[table_res]++;
+			strcpy(O->cols[table_res][simple_col_number[table_res]],buffer);
+			while(s[i]==' ')
+				i++;
+			if(s[i]==','){
+				i++;
+				goto general;
+			}
+			if(s[i]==0)
+				goto finish;
+			return ERROR;
+	}
+	finish:
+	for(i=0;i<3;i++){
+		O->num_cols[i]=simple_col_number[i];
+		O->agg_number[i]=agg_col_number[i];
+	}
+	return OK;
+
 	agg_check:
+	if(op==2)
+		i+=5;
+	else
+		i+=3;
 	if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]
 		>=2)
 		return ERROR;
 	else if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]==1){
 		//need to put simple to group by col
 		if(simple_col_number[0]){
-			strcpy(O->agg[0][0].col_name,O->cols[0][0]);
+			strcpy(O->agg[0][0].col_name,O->cols[0][1]);
 			simple_col_number[0]=0;
 			O->which_group=1;
 		}
 		else if(simple_col_number[1]){
-			strcpy(O->agg[1][0].col_name,O->cols[1][0]);
+			strcpy(O->agg[1][0].col_name,O->cols[1][1]);
 			simple_col_number[1]=0;
 			O->which_group=2;
 		}
 		else{
-			strcpy(O->agg[2][0].col_name,O->cols[2][0]);
+			strcpy(O->agg[2][0].col_name,O->cols[2][1]);
 			simple_col_number[2]=0;
 			O->which_group=3;
 		}
@@ -205,19 +420,19 @@ int extract_col2(arg_struct * O,char *s){
 	while(s[i]!=' '&&s[i]!=')'){
 		if(s[i]==0)
 			return ERROR;
-		O->agg[0][O->agg_number[0]].col_name[j++]=s[i++];	
+		buffer[j++]=s[i++];	
 	}
-	O->agg[0][O->agg_number[0]].col_name[j] = 0;
+	buffer[j] = 0;
 	//check the column name:remove table name
-	for(j=0;O->agg[0][O->agg_number[0]].col_name[j]!=0;j++)
-		if(O->agg[0][O->agg_number[0]].col_name[j]=='.')
+	for(j=0;buffer[j]!=0;j++)
+		if(buffer[j]=='.')
 		{
 			j++;
 			k=0;
-			while(O->agg[0][O->agg_number[0]].col_name[j]!=0){
-				O->agg[0][O->agg_number[0]].col_name[k++]=O->agg[0][O->agg_number[0]].col_name[j++];
+			while(buffer[j]!=0){
+				buffer[k++]=buffer[j++];
 			}
-			O->agg[0][O->agg_number[0]].col_name[k]=0;
+			buffer[k]=0;
 		}
 	if(s[i]==')'){
 		i++;
@@ -233,7 +448,19 @@ int extract_col2(arg_struct * O,char *s){
 		while(s[i]==' ')
 			i++;
 	}
-	agg_col_number++;
+	table_res = which_table(O->table[0],O->table[1],buffer);
+	if(table_res==ERROR)
+		return ERROR;
+	if(table_res==3){
+		if(op!=2)
+			return ERROR;
+		if(buffer[1]!=0);
+			return ERROR;
+		table_res=2;
+	}
+	agg_col_number[table_res]++;
+	strcpy(O->agg[table_res][agg_col_number[table_res]].col_name,buffer);
+	O->agg[table_res][agg_col_number[table_res]].op=op;
 	if(s[i]==0)
 		goto finish;
 	if(s[i]!=',')
@@ -308,6 +535,7 @@ int extract_col1(arg_struct * O,char *s){
 				O->group_col[j++]=s[i++];
 				}
 			O->group_col[j]= 0;
+			O->which_group=1;
 			while(s[i]==' ')
 				i++;
 			if(s[i]==0)
@@ -323,12 +551,14 @@ int extract_col1(arg_struct * O,char *s){
 		while(s[i]!=0&&s[i]!=' ')
 			O->group_col[j++]=s[i++];
 		O->group_col[j] = 0;
+		O->which_group=1;
 		goto finish;
 	}
 	else{
 		while(s[i]!=','&&s[i]!=' ')
 			O->group_col[j++]=s[i++];
 		O->group_col[j] = 0;
+		O->which_group=1;
 		while(s[i]==' ')
 			i++;
 		i++;
@@ -357,9 +587,9 @@ int extract_col1(arg_struct * O,char *s){
 			while(s[i]!=','&&s[i]!=' '&&s[i]!=0){
 				if(!myisalpha(s[i]))
 				return ERROR;
-				O->cols[0][simple_col_number-1][j++]=s[i++];
+				O->cols[0][simple_col_number][j++]=s[i++];
 				}
-			O->cols[0][simple_col_number-1][j] = 0;
+			O->cols[0][simple_col_number][j] = 0;
 			while(s[i]==' ')
 				i++;
 			if(s[i]==0)
@@ -373,14 +603,14 @@ int extract_col1(arg_struct * O,char *s){
 	}
 	if(s[i+k]==0){
 		while(s[i]!=0&&s[i]!=' ')
-			O->cols[0][simple_col_number-1][j++]=s[i++];
-		O->cols[0][simple_col_number-1][j] = 0;
+			O->cols[0][simple_col_number][j++]=s[i++];
+		O->cols[0][simple_col_number][j] = 0;
 		goto finish;
 	}
 	else{
 		while(s[i]!=','&&s[i]!=' ')
-			O->cols[0][simple_col_number-1][j++]=s[i++];
-		O->cols[0][simple_col_number-1][j] = 0;
+			O->cols[0][simple_col_number][j++]=s[i++];
+		O->cols[0][simple_col_number][j] = 0;
 		while(s[i]==' ')
 			i++;
 		i++;
@@ -433,8 +663,9 @@ int extract_col1(arg_struct * O,char *s){
 		//convert simple to group col
 		simple_col_number=0;
 		group_col_number=1;
-		strcpy(O->group_col,O->cols[0][0]);
-		memset(&O->cols[0][0],0,MAX_TABLE_NAME_LEN*sizeof(char));
+		strcpy(O->group_col,O->cols[0][1]);
+		O->which_group=1;
+		memset(&O->cols[0][1],0,MAX_TABLE_NAME_LEN*sizeof(char));
 	}
 	j=0;
 	k=0;
@@ -493,6 +724,7 @@ int extract_col1(arg_struct * O,char *s){
 	goto s1;
 
 }
+
 int how_many_tb(char *s,arg_struct *O){
 //given table(s), split (them by ",")
 	int count=0;
@@ -575,53 +807,65 @@ int main(int argc, char const *argv[])
 int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct *O){
 	int table_number;
 	int ex_col_result;
+	int group_by_res;
 	int i,j;
 	memset(O,0,sizeof(arg_struct));
 	table_number = how_many_tb(middle_buffer[1],O);
 	if(table_number==ERROR)
 		return ERROR;
 	if(table_number==2){
-		//extract_col2();
-		printf("hello~~\n");
+		ex_col_result=extract_col2(O,middle_buffer[0]);
+		if(ex_col_result==ERROR)
+			return ERROR;
 	}
 	else{
 		ex_col_result = extract_col1(O,middle_buffer[0]);
 		if(ex_col_result==ERROR)
 			return ERROR;
-		else{
-			printf("current info:\n");
-			printf("tables:\n" );
-			for(i=0;i<2;i++){
-				if(table_number-1>=i)
-					printf("table %d:%s\n",i+1,O->table[i] );
-			}
-			printf("output cols:\n");
-			for(i=0;i<3;i++){
-				printf("table %d:\n",i );
-				for(j=0;j<O->num_cols[i];j++){
-					printf("%s\t",O->cols[i][j]);
-				}
-			}
-			printf("filtering constants:\n");
-
-			printf("operations\n");
-
-			printf("aggregations:\n");
-			for(i=0;i<3;i++){
-				printf("table %d aggs:\n", i);
-				for(j=0;j<O->agg_number[i];j++){
-					printf("op:%d\t",O->agg[i][j].op);
-					printf("col_name:%s\n",O->agg[i][j+1].col_name );
-				}
-			}
-			
-			if(sign_flag[5]==1){
-				printf("group by:\n");
-				printf("%s\n",O->group_col);
-			}
-
-		}
+		if(O->which_group==1)//to satisfy argument API
+			strcpy(O->agg[0][0].col_name,O->group_col);
 	}
+	if(sign_flag[5]==1){
+		group_by_res=group_check(middle_buffer[5],O,table_number);
+		if(group_by_res==ERROR)
+			return ERROR;
+	}
+	if(sign_flag[2]){
+		//filter_res = 
+	}	
+	printf("current info:\n");
+	printf("tables:\n" );
+	for(i=0;i<2;i++){
+		if(table_number-1>=i)
+			printf("table %d:%s\n",i+1,O->table[i] );
+	}
+	printf("output cols:\n");
+	for(i=0;i<3;i++){
+		printf("table %d:\n",i );
+		for(j=0;j<O->num_cols[i];j++){
+			printf("%s\t",O->cols[i][j+1]);
+		}
+		}
+	printf("filtering constants:\n");
+	printf("operations\n");
+	printf("aggregations:\n");
+		for(i=0;i<3;i++){
+			printf("table %d aggs:\n", i);
+			for(j=0;j<O->agg_number[i];j++){
+				printf("op:%d\t",O->agg[i][j+1].op);
+				printf("col_name:%s\n",O->agg[i][j+1].col_name );
+			}
+		}
+
+	if(sign_flag[5]==1){
+		printf("group by:\n");
+		printf("%s\n",O->agg[O->which_group-1][0].col_name);
+	}
+	
+
+				
+
+
 	if(sign_flag[5]==0&&table_number==1)
 		return 1;
 	if(sign_flag[5]==0&&table_number==2)
@@ -829,7 +1073,7 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 							return ERROR;
 						if(offset2>1){
 							state = 6;
-							i+=offset;
+							i+=offset2;
 							middle_buffer[2][j] = 0;
 							sign_flag[2]=1;
 							break;
@@ -877,7 +1121,7 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 							return ERROR;
 						if(offset2>1){
 							state = 8;
-							i+=offset;
+							i+=offset2;
 							middle_buffer[3][j] = 0;
 							sign_flag[3]=1;
 							break;
@@ -928,6 +1172,8 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 					return ERROR;
 				break;
 				case 8:
+				//if(s[i]=='g'&&s[i+1]=='r'&&s[i+2]=='o'&&s[i+3]=='u'&&s[i+4]=='p'&&)
+				//i+=8;
 				while(*(s+i)==' ')
 					i++;
 				if(myisalpha2(*(s+i)))
