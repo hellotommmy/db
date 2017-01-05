@@ -289,7 +289,7 @@ unsigned hash(int_or_char a){
     }
 }
 
-struct nlist *lookup(int_or_char a,aggregation *agg, int num){
+struct nlist *lookup(int_or_char a,aggregation *agg1,aggregation *agg2, int num1,int num2){
     struct nlist *np;
     for (np = hashtab[hash(a)]; np != NULL; np = np->next) {
         // printf("here? %d %s %s\n",a.is_int,(np->a).varchar,a.varchar);
@@ -298,12 +298,12 @@ struct nlist *lookup(int_or_char a,aggregation *agg, int num){
         }
     }
     
-    np = install(a,agg,num);
+    np = install(a,agg1,agg2,num1,num2);
     if (np != NULL) return np;
     return NULL;
 }
 
-struct nlist *install(int_or_char a , aggregation *agg, int num){
+struct nlist *install(int_or_char a , aggregation*agg1,aggregation *agg2, int num1,int num2){
     struct nlist *np;
     unsigned hashval;
     
@@ -311,12 +311,22 @@ struct nlist *install(int_or_char a , aggregation *agg, int num){
     
     hashval = hash(a);
     np->next = NULL;
+   
     int i;
-    for (i = 1; i <= num; i++) {
-        if (agg[i].op != 3) np->res[i] = agg_init(agg[i].op);
+    
+    for (i = 1; i <= num1; i++) {
+     
+        if (agg1[i].op != 3) np->res[i] = agg_init(agg1[i].op);
         else {
             np->res[i] = agg_init(1);
             np->res2[i]= agg_init(2);
+        }
+    }
+    for (i = 1; i <= num2; i++) {
+        if (agg2[i].op != 3) np->res1[i] = agg_init(agg2[i].op);
+        else {
+            np->res1[i] = agg_init(1);
+            np->res12[i]= agg_init(2);
         }
     }
     hashtab[hashval] = np;
@@ -390,4 +400,5 @@ int hashwrite(char *table_buff, int size, table_head head,FILE *fp, int_or_char 
     }
     return buffnum;
 }
+
 

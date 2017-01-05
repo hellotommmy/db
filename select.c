@@ -101,26 +101,30 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
 
 
 /*int select_join(
- char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],     //第一个表的列
- int num1,                                               //第一个表的列的个数 （num1和num2同时为0 表示select*）
- char *table1,                                           //第一个表名
- char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],     //第二个表的列
- int num2,                                               //第二个表的列的个数
- char *table2,                                           //的二个表名
- char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],//未知的列
- int num,                                                //未知的列的个数
- char *seletcol1,                                        //选择条件1的列
- int op1,                                                //选择条件1的操作（同上的op编码，op=0表示无此条件）
- int_or_char constant1,                                  //选择条件1的常量
- char *seletcol2,                                        //选择条件2的列
- int op2,                                                //选择条件2的操作（同上的op编码，op=0表示无此条件）
+ //char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],     //第一个表的列
+ //int num1,                                               //第一个表的列的个数 （num1和num2同时为0 表示select*）
+ //char *table1,                                           //第一个表名
+ //char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],     //第二个表的列
+ //int num2,                                               //第二个表的列的个数
+ //char *table2,                                           //的二个表名
+ //char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],//未知的列
+ //int num,                                                //未知的列的个数
+ //char *seletcol1,                                        //选择条件1的列
+ int amb1,
+ //int op1,                                                //选择条件1的操作（同上的op编码，op=0表示无此条件）
+ //int_or_char constant1,                                  //选择条件1的常量
+ //char *seletcol2,                                        //选择条件2的列
+ int amb2,
+ //int op2,                                                //选择条件2的操作（同上的op编码，op=0表示无此条件）
  int_or_char constant2,                                  //选择条件2的常量
- char *seletcol3_1,                                      //连接条件的第一个列（来自table1）
- int op3,                                                //连接条件的操作（同上的op编码，op=0表示无此条件）
- char *seletcol3_2                                       //连接条件的第而个列（来自table2）
- )
- */
-int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int op1, int_or_char constant1,char *selectcol2,int op2, int_or_char constant2,char *selectcol3_1,int op3, char *selectcol3_2){
+ //char *seletcol3_1,                                      //连接条件的第一个列（来自table1）
+ //int amb3_1,
+ //int op3,                                                //连接条件的操作（同上的op编码，op=0表示无此条件）
+ //char *seletcol3_2,                                       //连接条件的第而个列（来自table2）
+ int amb3_2
+ )*/
+ 
+int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2){
     char name1[128];
     char name2[128];
     int num1_store,num2_store;
@@ -195,7 +199,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     
     /****** judge unknown cols ******/
     if (num) {
-    
+        
         int t;
         for (t = 1; t <= num; t++) {
             for (i = 0; i < head1.col_num; i++) {
@@ -217,16 +221,16 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
             //在table1中没有unknown[t]
             
             if (i >= head1.col_num) {
-            
-                for (j = 0; j < head2.col_num; j++) {
                 
+                for (j = 0; j < head2.col_num; j++) {
+                    
                     if (strcmp(head2.col_name[i], unknowncols[t]) == 0) {
                         strcpy(cols2[num2+1], unknowncols[t]);
                         num2++;
                         break;
                     }
                 }
-                 
+                
                 if (j >= head2.col_num) {
                     printf("Column %s doesn’t exist\n",unknowncols[t]);
                     fclose(fp1);
@@ -238,94 +242,298 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     }
     num1_store = num1;
     num2_store = num2;
-    /******* judge selectcol1 in table1 *********/
+    int type1,type2;
+     /******* judge selectcol1 in table1 *********/
     if (op1 != 0) {
-        for (i = 0; i < head1.col_num; i++) {
-            if (strcmp(selectcol1, head1.col_name[i]) == 0){
-                printbit1[num1 + 1] = i;
-                if (  (head1.col_type[i/32] & (1 << (i%32) ) ) ^ (constant1.is_int << i%32)){
-                    if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
-                    else printf("Predicate %s error\n",constant1.varchar);
+        if (!amb1) {
+            for (i = 0; i < head1.col_num; i++) {
+                if (strcmp(selectcol1, head1.col_name[i]) == 0){
+                    printbit1[num1 + 1] = i;
+                    if (  (head1.col_type[i/32] & (1 << (i%32) ) ) ^ (constant1.is_int << i%32)){
+                        if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
+                        else printf("Predicate %s error\n",constant1.varchar);
+                        fclose(fp1);
+                        fclose(fp2);
+                        return -1;
+                    }
+                    num1++;
+                    break;
+                }
+            }
+            if ((i >= head1.col_num)){
+                printf("Column %s doesn’t exist\n",selectcol1);
+                fclose(fp1);
+                fclose(fp2);
+                return -1;
+            }
+        } else {
+            for (i = 0; i < head1.col_num; i++) {
+                if (strcmp(head1.col_name[i], selectcol1) == 0) {
+                    for (j = 0; j < head2.col_num; j++) {
+                        if (strcmp(head2.col_name[j], selectcol1)) {
+                            printf("Ambiguous column %s\n",selectcol1);
+                            fclose(fp1);
+                            fclose(fp2);
+                            return  -1;
+                        }
+                    }
+                    //未有歧义
+                    printbit1[num1 + 1] = i;
+                    if (  (head1.col_type[i/32] & (1 << (i%32) ) ) ^ (constant1.is_int << i%32)){
+                        if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
+                        else printf("Predicate %s error\n",constant1.varchar);
+                        fclose(fp1);
+                        fclose(fp2);
+                        return -1;
+                    }
+                    num1++;
+                    break;
+                }
+            }
+            //在table1中没有
+            
+            if (i >= head1.col_num) {
+                
+                for (j = 0; j < head2.col_num; j++) {
+                    
+                    if (strcmp(head2.col_name[j], selectcol1) == 0) {
+                        printbit2[num2 + 1] = j;
+                        if (  (head2.col_type[j/32] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
+                            if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
+                            else printf("Predicate %s error\n",constant2.varchar);
+                            fclose(fp1);
+                            fclose(fp2);
+                            return -1;
+                        }
+                        num2++;
+                        break;
+                    }
+                }
+                
+                if (j >= head2.col_num) {
+                    printf("Column %s doesn’t exist\n",selectcol1);
                     fclose(fp1);
                     fclose(fp2);
                     return -1;
                 }
-                num1++;
-                break;
             }
         }
-        if ((i >= head1.col_num)){
-            printf("Column %s doesn’t exist\n",selectcol1);
-            fclose(fp1);
-            fclose(fp2);
-            return -1;
-        }
+        
     }
     /******* judge selectcol2 in table2 *********/
     if (op2 != 0) {
-        for (i = 0; i < head2.col_num; i++) {
-            if (strcmp(selectcol2, head2.col_name[i]) == 0){
-                printbit2[num2 + 1] = i;
-                if (  (head2.col_type[i/32] & (1 << (i%32) ) ) ^ (constant2.is_int << i%32)){
-                    if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
-                    else printf("Predicate %s error\n",constant2.varchar);
+        if (!amb2) {
+            for (i = 0; i < head2.col_num; i++) {
+                if (strcmp(selectcol2, head2.col_name[i]) == 0){
+                    printbit2[num2 + 1] = i;
+                    if (  (head2.col_type[i/32] & (1 << (i%32) ) ) ^ (constant2.is_int << i%32)){
+                        if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
+                        else printf("Predicate %s error\n",constant2.varchar);
+                        fclose(fp2);
+                        fclose(fp1);
+                        return -1;
+                    }
+                    num2++;
+                    break;
+                }
+            }
+            if ((i >= head2.col_num)){
+                printf("Column %s doesn’t exist\n",selectcol2);
+                fclose(fp2);
+                fclose(fp1);
+                return -1;
+            }
+        } else {
+            for (i = 0; i < head2.col_num; i++) {
+                if (strcmp(head2.col_name[i], selectcol2) == 0) {
+                    for (j = 0; j < head1.col_num; j++) {
+                        if (strcmp(head1.col_name[j], selectcol2)) {
+                            printf("Ambiguous column %s\n",selectcol2);
+                            fclose(fp2);
+                            fclose(fp1);
+                            return  -1;
+                        }
+                    }
+                    //未有歧义
+                    printbit2[num2 + 1] = i;
+                    if (  (head2.col_type[i/31] & (1 << (i%32) ) ) ^ (constant2.is_int << i%32)){
+                        if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
+                        else printf("Predicate %s error\n",constant2.varchar);
+                        fclose(fp2);
+                        fclose(fp1);
+                        return -1;
+                    }
+                    num2++;
+                    break;
+                }
+            }
+            //在table2中没有
+            
+            if (i >= head2.col_num) {
+                
+                for (j = 0; j < head1.col_num; j++) {
+                    
+                    if (strcmp(head1.col_name[j], selectcol2) == 0) {
+                        printbit1[num1 + 1] = j;
+                        if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant1.is_int << j%32)){
+                            if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
+                            else printf("Predicate %s error\n",constant1.varchar);
+                            fclose(fp2);
+                            fclose(fp1);
+                            return -1;
+                        }
+                        num1++;
+                        break;
+                    }
+                }
+                
+                if (j >= head1.col_num) {
+                    printf("Column %s doesn’t exist\n",selectcol2);
+                    fclose(fp2);
+                    fclose(fp1);
                     return -1;
                 }
-                num2++;
-                break;
             }
         }
-        if ((i >= head2.col_num)){
-            printf("Column %s doesn’t exist\n",selectcol2);
-            fclose(fp1);
-            fclose(fp2);
-            return -1;
-        }
+        
     }
-    
-    int type1 = 0, type2 = 0;
     
     /******* judge selectcol3_1 in table1 *********/
     if (op3 != 0) {
-        for (i = 0; i < head1.col_num; i++) {
-            if (strcmp(selectcol3_1, head1.col_name[i]) == 0){
-                if (  head1.col_type[i/32] & (1 << (i%32) ) )  type1 = 1;
-                printbit1[num1 + 1] = i;
-                //   num1++;
-                break;
+        if (!amb3_1) {
+            for (i = 0; i < head1.col_num; i++) {
+                if (strcmp(selectcol3_1, head1.col_name[i]) == 0){
+                    if (  head1.col_type[i/32] & (1 << (i%32) ) )  type1 = 1;
+                    printbit1[num1 + 1] = i;
+                    if (amb3_1) {
+                        for (j = 0; j < head2.col_num; j++) {
+                            if (strcmp(head2.col_name[j], selectcol3_1)) {
+                                printf("Ambiguous column %s\n",selectcol3_1);
+                                fclose(fp1);
+                                fclose(fp2);
+                                return  -1;
+                            }
+                        }
+                    }
+                    break;
+                }
             }
-        }
-        if ((i >= head1.col_num)){
-            printf("Column %s doesn’t exist\n",selectcol3_1);
-            fclose(fp1);
-            fclose(fp2);
-            return -1;
+            if ((i >= head1.col_num)){
+                printf("Column %s doesn’t exist\n",selectcol3_1);
+                fclose(fp1);
+                fclose(fp2);
+                return -1;
+            }
+        } else {
+            for (i = 0; i < head1.col_num; i++) {
+                if (strcmp(head1.col_name[i], selectcol3_1) == 0) {
+                    if (  head1.col_type[i/32] & (1 << (i%32) ) )  type1 = 1;
+                    for (j = 0; j < head2.col_num; j++) {
+                        if (strcmp(head2.col_name[j], selectcol3_1)) {
+                            printf("Ambiguous column %s\n",selectcol3_1);
+                            fclose(fp1);
+                            fclose(fp2);
+                            return  -1;
+                        }
+                    }
+                    //未有歧义
+                    printbit1[num1 + 1] = i;
+                    break;
+                }
+            }
+            //在table1中没有
+            
+            if (i >= head1.col_num) {
+                
+                for (j = 0; j < head2.col_num; j++) {
+                    
+                    if (strcmp(head2.col_name[j], selectcol3_1) == 0) {
+                        if (  head2.col_type[j/32] & (1 << (j%32) ) )  type2 = 1;
+                        printbit2[num2 + 1] = j;
+                        break;
+                    }
+                }
+                
+                if (j >= head2.col_num) {
+                    printf("Column %s doesn’t exist\n",selectcol3_1);
+                    fclose(fp1);
+                    fclose(fp2);
+                    return -1;
+                }
+            }
         }
     }
     
     
     /******* judge selectcol3_2 in table2 *********/
     if (op3 != 0) {
-        for (i = 0; i < head2.col_num; i++) {
-            if (strcmp(selectcol3_2, head2.col_name[i]) == 0){
-                if (  head2.col_type[i/32] & (1 << (i%32) ) )  type2 = 1;
-                printbit2[num2 + 1] = i;
-                //   num2++;
-                break;
+        if (!amb3_2) {
+            for (i = 0; i < head2.col_num; i++) {
+                if (strcmp(selectcol3_2, head2.col_name[i]) == 0){
+                    if (  head2.col_type[i/32] & (1 << (i%32) ) )  type2 = 1;
+                    printbit2[num2 + 1] = i;
+                    if (amb3_2) {
+                        for (j = 0; j < head1.col_num; j++) {
+                            if (strcmp(head1.col_name[j], selectcol3_2)) {
+                                printf("Ambiguous column %s\n",selectcol3_2);
+                                fclose(fp1);
+                                fclose(fp2);
+                                return  -1;
+                            }
+                        }
+                    }
+                    break;
+                }
             }
-        }
-        if ((i >= head2.col_num)){
-            printf("Column %s doesn’t exist\n",selectcol3_2);
-            fclose(fp1);
-            fclose(fp2);
-            return -1;
+            if ((i >= head2.col_num)){
+                printf("Column %s doesn’t exist\n",selectcol3_2);
+                fclose(fp1);
+                fclose(fp2);
+                return -1;
+            }
+        } else {
+            for (i = 0; i < head2.col_num; i++) {
+                if (strcmp(head2.col_name[i], selectcol3_2) == 0) {
+                    if (  head2.col_type[i/32] & (1 << (i%32) ) )  type2 = 1;
+                    for (j = 0; j < head1.col_num; j++) {
+                        if (strcmp(head1.col_name[j], selectcol3_2)) {
+                            printf("Ambiguous column %s\n",selectcol3_2);
+                            fclose(fp2);
+                            fclose(fp1);
+                            return  -1;
+                        }
+                    }
+                    //未有歧义
+                    printbit2[num2 + 1] = i;
+                    break;
+                }
+            }
+            //在table2中没有
+            
+            if (i >= head2.col_num) {
+                
+                for (j = 0; j < head1.col_num; j++) {
+                    
+                    if (strcmp(head1.col_name[j], selectcol3_2) == 0) {
+                        if (  head1.col_type[j/32] & (1 << (j%32) ) )  type1 = 1;
+                        printbit1[num1 + 1] = j;
+                        break;
+                    }
+                }
+                
+                if (j >= head1.col_num) {
+                    printf("Column %s doesn’t exist\n",selectcol3_2);
+                    fclose(fp2);
+                    fclose(fp1);
+                    return -1;
+                }
+            }
         }
     }
     
     /******* 检查连接条件是否一致 ***********/
     if (type1 ^ type2){ //have some problem
-        if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
-        else printf("Predicate %s error\n",constant2.varchar);
+        printf("Join predicate error\n");
         fclose(fp1);
         fclose(fp2);
         return -1;
@@ -440,6 +648,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                 
                                 /****** print table1 *********/
                                 i =1;
+                                if (num1_store){
                                 if(head1.col_type[0] & (1 << printbit1[i])){// int type
                                     if (num1_store) printf("%d",intarry1[head1.index[printbit1[i]]]);
                                 } else {
@@ -449,6 +658,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                         temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
                                         printf("%s",temp);
                                     }
+                                }
                                 }
                                 int j = 0;
                                 for (i = 2; i <= num1_store; i++) {
@@ -466,6 +676,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                 /****** print table2 *********/
                                 if (num1_store && num2_store) printf("|");
                                 i =1;
+                                if(num2_store){
                                 if(head2.col_type[0] & (1 << printbit2[i])){// int type
                                     if (num2_store) printf("%d",intarry2[head2.index[printbit2[i]]]);
                                 } else {
@@ -475,6 +686,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                         temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
                                         printf("%s",temp);
                                     }
+                                }
                                 }
                                 j = 0;
                                 for (i = 2; i <= num2_store; i++) {
@@ -577,6 +789,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                 
                                 /****** print table1 *********/
                                 i =1;
+                                if (num1_store){
                                 if(head1.col_type[0] & (1 << printbit1[i])){// int type
                                     if (num1_store) printf("%d",intarry1[head1.index[printbit1[i]]]);
                                 } else {
@@ -584,6 +797,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                     memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
                                     temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
                                     printf("%s",temp);
+                                }
                                 }
                                 int j = 0;
                                 for (i = 2; i <= num1_store; i++) {
@@ -601,8 +815,9 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                 /****** print table2 *********/
                                 if (num1_store && num2_store) printf("|");
                                 i =1;
+                                if (num2_store){
                                 if(head2.col_type[0] & (1 << printbit2[i])){// int type
-                                    if (num1_store) printf("%d",intarry2[head2.index[printbit2[i]]]);
+                                    if (num2_store) printf("%d",intarry2[head2.index[printbit2[i]]]);
                                 } else {
                                     if (num2_store) {
                                         char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
@@ -610,6 +825,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                                         temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
                                         printf("%s",temp);
                                     }
+                                }
                                 }
                                 j = 0;
                                 for (i = 2; i <= num2_store; i++) {
