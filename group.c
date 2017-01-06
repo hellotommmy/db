@@ -362,7 +362,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         for (i = 0; i < head1.col_num; i++) {
             if (strcmp(head1.col_name[i], unknown[t].col_name) == 0) {
                 for (j = 0; j < head2.col_num; j++) {
-                    if (strcmp(head2.col_name[j], unknown[t].col_name)) {
+                    if (strcmp(head2.col_name[j], unknown[t].col_name)==0) {
                         printf("Ambiguous column %s\n",unknown[t].col_name);
                         fclose(fp1);
                         fclose(fp2);
@@ -411,7 +411,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
             for (i = 0; i < head1.col_num; i++) {
                 if (strcmp(head1.col_name[i], unknown[t].col_name) == 0) {
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], unknown[t].col_name)) {
+                        if (strcmp(head2.col_name[j], unknown[t].col_name)==0) {
                             printf("Ambiguous column %s\n",unknown[t].col_name);
                             fclose(fp1);
                             fclose(fp2);
@@ -527,7 +527,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
             for (i = 0; i < head1.col_num; i++) {
                 if (strcmp(head1.col_name[i], selectcol1) == 0) {
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], selectcol1)) {
+                        if (strcmp(head2.col_name[j], selectcol1)==0) {
                             printf("Ambiguous column %s\n",selectcol1);
                             fclose(fp1);
                             fclose(fp2);
@@ -604,7 +604,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
             for (i = 0; i < head2.col_num; i++) {
                 if (strcmp(head2.col_name[i], selectcol2) == 0) {
                     for (j = 0; j < head1.col_num; j++) {
-                        if (strcmp(head1.col_name[j], selectcol2)) {
+                        if (strcmp(head1.col_name[j], selectcol2)==0) {
                             printf("Ambiguous column %s\n",selectcol2);
                             fclose(fp2);
                             fclose(fp1);
@@ -664,7 +664,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     printbit1[num1 + 1] = i;
                     if (amb3_1) {
                         for (j = 0; j < head2.col_num; j++) {
-                            if (strcmp(head2.col_name[j], selectcol3_1)) {
+                            if (strcmp(head2.col_name[j], selectcol3_1)==0) {
                                 printf("Ambiguous column %s\n",selectcol3_1);
                                 fclose(fp1);
                                 fclose(fp2);
@@ -686,7 +686,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                 if (strcmp(head1.col_name[i], selectcol3_1) == 0) {
                     if (  head1.col_type[i/32] & (1 << (i%32) ) )  type1 = 1;
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], selectcol3_1)) {
+                        if (strcmp(head2.col_name[j], selectcol3_1)==0) {
                             printf("Ambiguous column %s\n",selectcol3_1);
                             fclose(fp1);
                             fclose(fp2);
@@ -731,7 +731,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     printbit2[num2 + 1] = i;
                     if (amb3_2) {
                         for (j = 0; j < head1.col_num; j++) {
-                            if (strcmp(head1.col_name[j], selectcol3_2)) {
+                            if (strcmp(head1.col_name[j], selectcol3_2)==0) {
                                 printf("Ambiguous column %s\n",selectcol3_2);
                                 fclose(fp1);
                                 fclose(fp2);
@@ -753,7 +753,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                 if (strcmp(head2.col_name[i], selectcol3_2) == 0) {
                     if (  head2.col_type[i/32] & (1 << (i%32) ) )  type2 = 1;
                     for (j = 0; j < head1.col_num; j++) {
-                        if (strcmp(head1.col_name[j], selectcol3_2)) {
+                        if (strcmp(head1.col_name[j], selectcol3_2)  == 0) {
                             printf("Ambiguous column %s\n",selectcol3_2);
                             fclose(fp2);
                             fclose(fp1);

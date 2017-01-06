@@ -127,9 +127,11 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
  int amb3_2
  )*/
  
-int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2){
+int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
+    int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2){
     printf("________________________________\n");
-    printf("selectcol1:%s\n",selectcol1);
+    printf("selectcol3_1:%s\n",selectcol3_1);
+    printf("selectcol3_2:%s\n",selectcol3_2);
     printf("op1:%d,amb1 = %d, constant1 = %d\n", op1,amb1,constant1.i);
     printf("amb3:%d\n",amb3_1);
     char name1[128];
@@ -212,7 +214,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
             for (i = 0; i < head1.col_num; i++) {
                 if (strcmp(head1.col_name[i], unknowncols[t]) == 0) {
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], unknowncols[t])) {
+                        if (strcmp(head2.col_name[j], unknowncols[t])==0) {
                             printf("Ambiguous column %s\n",unknowncols[t]);
                             fclose(fp1);
                             fclose(fp2);
@@ -277,7 +279,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
             for (i = 0; i < head1.col_num; i++) {
                 if (strcmp(head1.col_name[i], selectcol1) == 0) {
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], selectcol1)) {
+                        if (strcmp(head2.col_name[j], selectcol1)==0) {
                             printf("Ambiguous column %s\n",selectcol1);
                             fclose(fp1);
                             fclose(fp2);
@@ -354,7 +356,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
             for (i = 0; i < head2.col_num; i++) {
                 if (strcmp(head2.col_name[i], selectcol2) == 0) {
                     for (j = 0; j < head1.col_num; j++) {
-                        if (strcmp(head1.col_name[j], selectcol2)) {
+                        if (strcmp(head1.col_name[j], selectcol2)==0) {
                             printf("Ambiguous column %s\n",selectcol2);
                             fclose(fp2);
                             fclose(fp1);
@@ -415,7 +417,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                     printbit1[num1 + 1] = i;
                     if (amb3_1) {
                         for (j = 0; j < head2.col_num; j++) {
-                            if (strcmp(head2.col_name[j], selectcol3_1)) {
+                            if (strcmp(head2.col_name[j], selectcol3_1) == 0) {
                                 printf("Ambiguous column %s\n",selectcol3_1);
                                 fclose(fp1);
                                 fclose(fp2);
@@ -437,7 +439,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                 if (strcmp(head1.col_name[i], selectcol3_1) == 0) {
                     if (  head1.col_type[i/32] & (1 << (i%32) ) )  type1 = 1;
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], selectcol3_1)) {
+                        if (strcmp(head2.col_name[j], selectcol3_1)==0) {
                             printf("Ambiguous column %s\n",selectcol3_1);
                             fclose(fp1);
                             fclose(fp2);
@@ -482,7 +484,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                     printbit2[num2 + 1] = i;
                     if (amb3_2) {
                         for (j = 0; j < head1.col_num; j++) {
-                            if (strcmp(head1.col_name[j], selectcol3_2)) {
+                            if (strcmp(head1.col_name[j], selectcol3_2) == 0) {
                                 printf("Ambiguous column %s\n",selectcol3_2);
                                 fclose(fp1);
                                 fclose(fp2);
@@ -504,7 +506,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                 if (strcmp(head2.col_name[i], selectcol3_2) == 0) {
                     if (  head2.col_type[i/32] & (1 << (i%32) ) )  type2 = 1;
                     for (j = 0; j < head1.col_num; j++) {
-                        if (strcmp(head1.col_name[j], selectcol3_2)) {
+                        if (strcmp(head1.col_name[j], selectcol3_2)==0) {
                             printf("Ambiguous column %s\n",selectcol3_2);
                             fclose(fp2);
                             fclose(fp1);
@@ -869,5 +871,6 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     printf("________________________________\n");
     return 0;
 }
+
 
 

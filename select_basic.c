@@ -437,8 +437,11 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 	return 0;
 	join:
 	j=0;
-	if(which_table[0]==1&&which_table[1]==1)
-		return ERROR;
+//	if(which_table[0]==1&&which_table[1]==1)
+//		return ERROR;
+	printf("~~~~~~~~~~~~~~~~~~~~~\n");
+	printf("col 1 is not ambiguous if a 1 appears:%d\n",which_table[0]);
+	printf("col 2 is not ambiguous if a 1 appears:%d\n",which_table[1]);
 	if(which_table[0]==1){
 		//table 1 is chosen
 		//need to choose table 2
@@ -518,7 +521,7 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 		col[j]=0;
 		return 4;		
 	}
-	else{
+	else{//no matches for the first col
 		int match;
 		while(s[i]!=' '&&s[i]!='\0'){
 			if(s[i]=='.'){
@@ -540,12 +543,12 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 			while(s[i]==' ')
 				i++;
 		}	
-		if(0!=dot_flag[1]){
+		if(0!=dot_flag[1]){//if given the table name
 			if(strcmp(table1,constant)==0)
 				match = 1;
 			else{
-				if(strcmp(table2,constant)!=0)
-					*amb_join=1;
+				if(strcmp(table2,constant)!=0)//given col name but can match neither of the 2 tables
+					return ERROR;
 				match = 2;
 			}
 			if(match==2){
@@ -574,6 +577,9 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 				col[j]=0;
 				return 4;				
 			}
+		}
+		else{
+			*amb_join=1;
 		}
 		constant[j]=0;
 		return 4;
@@ -675,7 +681,6 @@ int filter(arg_struct *O,char *s,int mode){
 		if(status==ERROR||status==4)
 			return ERROR;
 		O->op[0]=op;
-//		printf("********************op is %d\n",op );
 		strcpy(O->filter[0],col_buff);
 		if(op>=1&&op<=6){
 			//int
@@ -852,7 +857,6 @@ int extract_col2(arg_struct * O,char *s){
 	int table_res;
 	if(!myisalpha2(s[0])){
 		if(s[0]=='*'&&s[1]==0){
-			printf("find star\n");
 			goto finish1;
 		}
 		return ERROR;
@@ -1087,7 +1091,6 @@ int extract_col1(arg_struct * O,char *s){
 	int fullname_flag = 0;
 	if(!myisalpha2(s[0])){
 		if(s[0]=='*'){
-			printf("find star\n");
 			goto finish;
 		}
 		printf("unrecognized char\n");
@@ -1341,7 +1344,6 @@ int how_many_tb(char *s,arg_struct *O){
 //given table(s), split (them by ",")
 	int count=0;
 	int j=0;
-	printf("%s\n",s );
 	while(*(s+count)!=','&&*(s+count)!=0){
 		if(myisalpha(*(s+count)))
 			O->table[0][j++]=*(s+count);
@@ -1427,13 +1429,10 @@ int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_fla
 				return OK;
 			}
 			else{
-			//	printf("%s\n",s);
-				printf("parse_select_begin\n");
 				return ERROR;
 			}
 		}
 		else{
-		//	printf("%s\n",s);
 			return ERROR;	
 		}
 }
@@ -1469,6 +1468,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	int filter_res;
 	if(sign_flag[2]){
 		filter_res = filter(O,middle_buffer[2],table_number); 
+//		printf("***********************O->amb_join = %d\n",O->amb_join );
 		if(filter_res==ERROR)
 			return ERROR;
 	}	
@@ -1483,18 +1483,26 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 			return ERROR;
 	}		
 	printf("current info:\n");
-	printf("tables:\n" );
+	printf("tables:\t" );
 	for(i=0;i<2;i++){
 		if(table_number-1>=i)
 			printf("table %d:%s\n",i+1,O->table[i] );
 	}
-	printf("output cols:\n");
-	for(i=0;i<3;i++){
-		printf("table %d:\n",i );
-		for(j=0;j<O->num_cols[i];j++){
-			printf("%s\t",O->cols[i][j+1]);
+	printf("output cols:\t");
+	if(O->num_cols[0]==0&&O->num_cols[1]==0&&O->num_cols[2]==0)
+		printf("all columns\n");
+	else{
+//		if(O->num_cols[0]){
+//			printf("table 1 has %d colums\n",O->num_cols[0] );
+//			for(j=0;)
+//		}
+		for(i=0;i<3;i++){
+			printf("table %d:\n",i );
+			for(j=0;j<O->num_cols[i];j++){
+				printf("%s\t",O->cols[i][j+1]);
+			}
 		}
-		}
+	}
 	printf("filtering constants:\n");
 	printf("operations\n");
 	printf("aggregations:\n");

@@ -311,10 +311,7 @@ void do_operation(){
 				O.inchar[0]);
 
 				
-			if(check_format==ERROR){
-				printf("syntax error\n");
-				break;
-				}
+	
 		}
 		else{
 			check_format=
@@ -326,10 +323,7 @@ void do_operation(){
 				O.op[0],
 				O.inchar[0]
 				);
-			if(check_format==ERROR){
-				printf("syntax error\n");
-				break;
-				}
+	
 		}
 	}
 	else{
@@ -397,10 +391,7 @@ void do_operation(){
 				O.join[0],O.amb_join,
 				1,O.join[1],O.amb_join);//1 means "="
 			//check result
-			if(check_format==ERROR){
-				printf("syntax error\n");
-				break;
-				}
+	
 				
 		}
 		else{
@@ -491,10 +482,7 @@ void do_operation(){
 				O.join[0],O.amb_join,
 				1,O.join[1],O.amb_join);//1 means "="
 
-			if(check_format==ERROR){
-				printf("syntax error\n");
-				break;
-				}			
+		
 		}
 	}
 	break;
