@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include "comm.h"
 int number_of_items;
-int col_type[MAX_ITEMS_IN_TABLE+1];//1---int,2---varchar
-char col_name[MAX_ITEMS_IN_TABLE+1][MAX_VARCHAR_LEN+1];
+int col_type[MAX_ITEMS_IN_TABLE];//1---int,2---varchar
+char col_name[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN];
 //column[0]存放表名，column[1],...依次存放各个列名
 char reserved[NUM_RESERVED_WORDS][MAX_WORD_LEN]={"create","table","int","varchar","drop","insert","select","from","where","and","or","into","values"};
 char type_name[NUM_TYPES][MAX_WORD_LEN]={"int","varchar"};
@@ -32,7 +32,7 @@ void clear_buffer();
 void do_operation();
 
 
-void parse_select();
+//void parse_select();
 void extract_items_between_brackets();
 
 
@@ -46,7 +46,7 @@ int main(int argc, char const *argv[])
 	FILE *fptr;
 	//printf("This is the path: %s\n",argv[1]);
 	
-	fptr = fopen("03_insert.sql","r");
+	fptr = fopen(argv[1],"r");
 	if (fptr==NULL)
 	{
 		printf("open error\n");
@@ -54,6 +54,8 @@ int main(int argc, char const *argv[])
 	}
 	while(read_sql_file_line(fptr)!=-1){
 		do_operation();
+		//if(which_type!=1)
+	//		printf("something unexpected\n");
 		error_flag = 0;
 		clear_buffer();
 	}
@@ -140,7 +142,7 @@ void extract_items_between_brackets(){
 		info_between_brackets[j++] = command_buffer[i++];
 	}
 	i++;
-	info_between_brackets = 0;
+	info_between_brackets[j] = 0;
 	while(command_buffer[i]==' '){
 		i++;
 	}
@@ -247,7 +249,10 @@ void do_operation(){
 	int cols;
 	char middle_buffer[6][1000];
 	char sign_flag[6];
+	int check_format;
 	arg_struct O;
+	int i;
+//	int k;
 	switch(which_type){
 	case 1:  
 		parse_create(command_buffer,&error_flag);
@@ -257,7 +262,12 @@ void do_operation(){
 				printf("Syntax error\n");
 				return;
 			}
-			create(col_name[0],number_of_items,col_name,col_type);
+//			printf("col name:%s\n",col_name[0] );
+//			printf("col items:\n");
+//			for(i=1;i<=number_of_items;i++){
+//				printf("%s,type is %d\n",col_name[i],col_type[i] );
+//			}
+			create(col_name[0],number_of_items,&(col_name[1]),&(col_type[1]));
 		}
 		else if(error_flag==2)
 			printf("Can’t create table\n");
@@ -273,108 +283,221 @@ void do_operation(){
 		break;
 	case 3:
 		cols = parse_insert(command_buffer,inchar,table_name);
-		if(cols!=ERROR)
-			insert(table_name,cols,inchar);
+		if(cols!=ERROR){
+			insert(table_name,cols,&(inchar[1]));
+		}
 		else
 			printf("Syntax error\n");
 		break;
 	case 4:
-	int check_format;
-	check_format = parse_select(&O,command_buffer,middle_buffer,sign_flag){
-	if(check_format==ERROR)
-		return ERROR;
-	if(O->table_number==1){
-		if(O->agg_number[0]!=0||O->agg_number[1]!=0||O->agg_number[2]!=0){
+	check_format = parse_select(&O,command_buffer,middle_buffer,sign_flag);
+	if(check_format==ERROR){
+		printf("Syntax error\n");
+		break;
+		}
+	printf("enter op\n");
+	if(O.table_number==1){
+		if(O.agg_number[0]!=0||O.agg_number[1]!=0||O.agg_number[2]!=0){
 			//1 table yes agg
 			
-			check_format=group_simple(O->table[0],O->group_col,O->agg[0],O->agg[0],O->filter[0],O->op[0],O->inchar[0]);
-			if(check_format==ERROR)
+				check_format=
+				group_simple(
+				O.table[0],
+				O.agg[0][0].col_name,
+				O.agg[0],
+				O.agg_number[0],
+				O.filter[0],
+				O.op[0],
+				O.inchar[0]);
+
+				
+			if(check_format==ERROR){
 				printf("syntax error\n");
+				break;
+				}
 		}
 		else{
-			check_format=select_simple(O->cols[0],O->num_cols[0],O->table[0],O->filter[0],O->op[0],O->inchar[0]);
-			if(check_format==ERROR)
+			check_format=
+			select_simple(
+				O.cols[0],
+				O.num_cols[0],
+				O.table[0],
+				O.filter[0],
+				O.op[0],
+				O.inchar[0]
+				);
+			if(check_format==ERROR){
 				printf("syntax error\n");
+				break;
+				}
 		}
 	}
 	else{
-		if(O->agg_number[0]!=0||O->agg_number[1]!=0||O->agg_number[2]!=0){
-			if(O->filter[0][0]!=0&&O->filter[1][0]!=0)
-				check_format=group_join(O->table[0],
-				O->agg[0][0].col_name,O->agg[0],
-				O->agg_number[0],O->table[1],
-				O->agg[1][0].col_name,O->agg[1],
-				O->agg_number[1],O->agg[2],
-				O->agg_number[2],O->filter[0],0//no ambi
-				,O->op[0],O->inchar[0], O->filter[1]//sel col 2
-				,0,O->op[1],O->inchar[1]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);
-			else if(O->filter[0][0]!=0&&O->filter[1][0]==0)
-				check_format=group_join(O->table[0],
-				O->agg[0][0].col_name,O->agg[0],
-				O->agg_number[0],O->table[1],
-				O->agg[1][0].col_name,O->agg[1],
-				O->agg_number[1],O->agg[2],
-				O->agg_number[2],O->filter[0],0//no ambi
-				,O->op[0],O->inchar[0], O->amb_filter[0]//sel col 2
-				,1,O->amb_op[0],O->amb_inchar[0]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);
-			else if(O->filter[0][0]==0&&O->filter[1][0]!=0)
-				check_format=group_join(O->table[0],
-				O->agg[0][0].col_name,O->agg[0],
-				O->agg_number[0],O->table[1],
-				O->agg[1][0].col_name,O->agg[1],
-				O->agg_number[1],O->agg[2],
-				O->agg_number[2],O->famb_ilter[0],1//no ambi
-				,O->amb_op[0],O->amb_inchar[0], O->filter[1]//sel col 2
-				,0,O->op[1],O->inchar[1]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);
+		if(O.agg_number[0]!=0||O.agg_number[1]!=0||O.agg_number[2]!=0){
+			//aggregation appears
+				if(O.filter[0][0]!=0&&O.filter[1][0]!=0)
+				check_format=group_join(O.table[0],O.agg[0][0].col_name,
+				O.agg[0],O.agg_number[0],
+				O.table[1],O.agg[1][0].col_name,
+				O.agg[1],O.agg_number[1],
+				O.agg[2],O.agg_number[2],
+
+				 O.filter[0],0//no ambi
+				,O.op[0],O.inchar[0],
+
+				 O.filter[1],0,
+				 O.op[1],O.inchar[1],//no ambi
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+			else if(O.filter[0][0]!=0&&O.filter[1][0]==0)
+				check_format=group_join(O.table[0],O.agg[0][0].col_name,
+				O.agg[0],O.agg_number[0],
+				O.table[1],O.agg[1][0].col_name,
+				O.agg[1],O.agg_number[1],
+				O.agg[2],O.agg_number[2],
+
+				 O.filter[0],0//no ambi
+				,O.op[0],O.inchar[0],
+
+				 O.amb_filter[0],O.amb_op[0]!=0,//is ambi
+				 O.amb_op[0],O.amb_inchar[0],
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+
+			else if(O.filter[0][0]==0&&O.filter[1][0]!=0)
+				check_format=group_join(O.table[0],O.agg[0][0].col_name,
+				O.agg[0],O.agg_number[0],
+				O.table[1],O.agg[1][0].col_name,
+				O.agg[1],O.agg_number[1],
+				O.agg[2],O.agg_number[2],
+
+				 O.amb_filter[0],O.amb_op[0]!=0,//is ambi
+				O.amb_op[0],O.amb_inchar[0],
+
+				 O.filter[1],0,
+				 O.op[1],O.inchar[1],//no ambi
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
 			else
-				check_format=group_join(O->table[0],
-				O->agg[0][0].col_name,O->agg[0],
-				O->agg_number[0],O->table[1],
-				O->agg[1][0].col_name,O->agg[1],
-				O->agg_number[1],O->agg[2],
-				O->agg_number[2],O->famb_ilter[0],1//no ambi
-				,O->amb_op[0],O->amb_inchar[0], O->_amb_filter[1]//sel col 2
-				,1,O->amb_op[1],O->amb_inchar[1]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);				
-			if(check_format==ERROR)
+				check_format=group_join(O.table[0],O.agg[0][0].col_name,
+				O.agg[0],O.agg_number[0],
+				O.table[1],O.agg[1][0].col_name,
+				O.agg[1],O.agg_number[1],
+				O.agg[2],O.agg_number[2],
+
+				 O.amb_filter[0],O.amb_op[0]!=0,//is ambi
+				O.amb_op[0],O.amb_inchar[0],
+
+				 O.amb_filter[1],O.amb_op[1]!=0,//is ambi
+				 O.amb_op[1],O.amb_inchar[1],
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+			//check result
+			if(check_format==ERROR){
 				printf("syntax error\n");
+				break;
+				}
+				
 		}
 		else{
-			if(O->filter[0][0]!=0&&O->filter[1][0]!=0)
-				check_format=group_join(O->cols[0],O->num_cols[0],
-				O->table[0],O->cols[1],O->num_cols[1],O->table[1],O->cols[2],O->num_cols[2],
-				 O->filter[0],0//no ambi
-				,O->op[0],O->inchar[0], O->filter[1]//sel col 2
-				,0,O->op[1],O->inchar[1]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);
-			else if(O->filter[0][0]!=0&&O->filter[1][0]==0)
-				check_format=group_join(O->cols[0],O->num_cols[0],
-				O->table[0],O->cols[1],O->num_cols[1],O->table[1],O->cols[2],O->num_cols[2],
-				 O->filter[0],0//no ambi
-				,O->op[0],O->inchar[0], O->amb_filter[0]//sel col 2
-				,1,O->amb_op[0],O->amb_inchar[0]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);
-			else if(O->filter[0][0]==0&&O->filter[1][0]!=0)
-				check_format=group_join(O->cols[0],O->num_cols[0],
-				O->table[0],O->cols[1],O->num_cols[1],O->table[1],O->cols[2],O->num_cols[2],
-				 O->famb_ilter[0],1//no ambi
-				,O->amb_op[0],O->amb_inchar[0], O->filter[1]//sel col 2
-				,0,O->op[1],O->inchar[1]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);
+			if(O.filter[0][0]!=0&&O.filter[1][0]!=0)
+				check_format=select_join(
+				O.cols[0],
+				O.num_cols[0],
+				O.table[0],
+
+				O.cols[1],
+				O.num_cols[1],
+				O.table[1],
+
+				O.cols[2],
+				O.num_cols[1],
+				
+				O.filter[0],0,//no ambi
+				O.op[0],O.inchar[0],
+
+				 O.filter[1],0,
+				 O.op[1],O.inchar[1],//no ambi
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+			else if(O.filter[0][0]!=0&&O.filter[1][0]==0)
+				check_format=select_join(
+				O.cols[0],
+				O.num_cols[0],
+				O.table[0],
+
+				O.cols[1],
+				O.num_cols[1],
+				O.table[1],
+
+				O.cols[2],
+				O.num_cols[1],
+				
+				O.filter[0],0,//no ambi
+				O.op[0],O.inchar[0],
+
+				 O.amb_filter[0],O.amb_op[0]!=0,//is ambi
+				 O.amb_op[0],O.amb_inchar[0],
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+
+			else if(O.filter[0][0]==0&&O.filter[1][0]!=0)
+				check_format=select_join(
+				O.cols[0],
+				O.num_cols[0],
+				O.table[0],
+
+				O.cols[1],
+				O.num_cols[1],
+				O.table[1],
+
+				O.cols[2],
+				O.num_cols[1],
+				
+				 O.amb_filter[0],O.amb_op[0]!=0,//is ambi
+				 O.amb_op[0],O.amb_inchar[0],
+
+				 O.filter[1],0,
+				 O.op[1],O.inchar[1],//no ambi
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+
 			else
-				check_format=group_join(O->cols[0],O->num_cols[0],
-				O->table[0],O->cols[1],O->num_cols[1],O->table[1],O->cols[2],O->num_cols[2],
-				 O->famb_ilter[0],1//no ambi
-				,O->amb_op[0],O->amb_inchar[0], O->_amb_filter[1]//sel col 2
-				,1,O->amb_op[1],O->amb_inchar[1]
-				O->join[0],O->amb_join,1,O->join[1],O->amb_join);				
-			if(check_format==ERROR)
-				printf("syntax error\n");				
+				check_format=select_join(
+				O.cols[0],
+				O.num_cols[0],
+				O.table[0],
+
+				O.cols[1],
+				O.num_cols[1],
+				O.table[1],
+
+				O.cols[2],
+				O.num_cols[1],
+				
+				 O.amb_filter[0],O.amb_op[0]!=0,//is ambi
+				 O.amb_op[0],O.amb_inchar[0],
+
+				 O.amb_filter[1],O.amb_op[1]!=0,//is ambi
+				 O.amb_op[1],O.amb_inchar[1],
+
+				O.join[0],O.amb_join,
+				1,O.join[1],O.amb_join);//1 means "="
+
+			if(check_format==ERROR){
+				printf("syntax error\n");
+				break;
+				}			
 		}
 	}
+	break;
 	default:
 		break;
 	}

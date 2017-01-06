@@ -34,7 +34,6 @@ int group_check(char * ,arg_struct *O,int mode);
 int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct *O);
 int filter(arg_struct *O,char *s,int mode);
 int isnumber(char c);
-int myisalpha1(char c);
 int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN],int *op,char constant[MAX_VARCHAR_LEN]);
 int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN],int *op,char constant[MAX_VARCHAR_LEN]){
 	//return 0 for 1 table
@@ -604,18 +603,7 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 	return 1;
 }
 
-int myisalpha1(char c){
-//check the start of a variable, no numbers
-	if('a'<=c&&c<='z')
-		return 1;
-	if('A'<=c&&c<='Z')
-		return 1;
-	if('0'<=c&&c<='9')
-		return 1;
-	if(c=='_')
-		return 1;
-	return 0;
-}
+
 int isnumber(char c){
 	if('0'<=c&&c<='9')
 		return 1;
@@ -638,7 +626,7 @@ int filter(arg_struct *O,char *s,int mode){
 			strcpy(O->join[1],constant_buff);
 		}
 		else if(status==3){
-			if(O->amb_op[0]){
+			if(O->amb_op[0]==0){
 				O->amb_op[0]=op;
 				strcpy(O->amb_filter[0],col_buff);
 				if(op>=1&&op<=6){
@@ -862,7 +850,8 @@ int extract_col2(arg_struct * O,char *s){
 	int table_res;
 	if(!myisalpha2(s[0])){
 		if(s[0]=='*'&&s[1]==0){
-			goto finish;
+			printf("find star\n");
+			goto finish1;
 		}
 		return ERROR;
 	}
@@ -915,7 +904,7 @@ int extract_col2(arg_struct * O,char *s){
 			buffer[j]=0;
 			strcpy(O->agg[2][0].col_name,buffer);//2-unknown col
 			O->which_group=3;
-			goto finish;
+			goto finish1;
 		}
 		if(s[i]=='.'){
 			buffer[j++]=s[i++];
@@ -939,7 +928,7 @@ int extract_col2(arg_struct * O,char *s){
 				goto general;
 			}
 			if(s[i]==0)
-				goto finish;
+				goto finish1;
 			return ERROR;
 		}
 		if(s[i]==','){
@@ -973,14 +962,14 @@ int extract_col2(arg_struct * O,char *s){
 				goto general;
 			}
 			if(s[i]==0)
-				goto finish;
+				goto finish1;
 			return ERROR;
 	}
-	finish:
-	for(i=0;i<3;i++){
-		O->num_cols[i]=simple_col_number[i];
-		O->agg_number[i]=agg_col_number[i];
-	}
+	finish1:
+		for(i=0;i<3;i++){
+			O->num_cols[i]=simple_col_number[i];
+			O->agg_number[i]=agg_col_number[i];
+		}
 	return OK;
 
 	agg_check:
@@ -1077,7 +1066,7 @@ int extract_col2(arg_struct * O,char *s){
 	strcpy(O->agg[table_res][agg_col_number[table_res]].col_name,buffer);
 	O->agg[table_res][agg_col_number[table_res]].op=op;
 	if(s[i]==0)
-		goto finish;
+		goto finish1;
 	if(s[i]!=',')
 		return ERROR;
 	i++;
@@ -1094,8 +1083,14 @@ int extract_col1(arg_struct * O,char *s){
 	int simple_col_number = 0;
 	int group_col_number = 0;
 	int fullname_flag = 0;
-	if(!myisalpha2(s[0]))
+	if(!myisalpha2(s[0])){
+		if(s[0]=='*'){
+			printf("find star\n");
+			goto finish;
+		}
+		printf("unrecognized char\n");
 		return ERROR;
+	}
 	s1://read a new column
 	if(group_col_number>1)
 		return ERROR;
@@ -1344,6 +1339,7 @@ int how_many_tb(char *s,arg_struct *O){
 //given table(s), split (them by ",")
 	int count=0;
 	int j=0;
+	printf("%s\n",s );
 	while(*(s+count)!=','&&*(s+count)!=0){
 		if(myisalpha(*(s+count)))
 			O->table[0][j++]=*(s+count);
@@ -1423,16 +1419,21 @@ int main(int argc, char const *argv[])
 int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_flag[6]){
 		int how_many;
 		if(format_check(s,middle_buffer,sign_flag)!=ERROR){	
+			printf("middle_buffers:|%s|%s|%s|%s|%s|%s|\n", middle_buffer[0],middle_buffer[1],middle_buffer[2],middle_buffer[3],middle_buffer[4],middle_buffer[5]);
 			if((how_many=parse_select_begin(middle_buffer,sign_flag,O))!=ERROR)
 			{
 				return OK;
 			}
 			else{
+			//	printf("%s\n",s);
+				printf("parse_select_begin\n");
 				return ERROR;
 			}
 		}
-		else
+		else{
+		//	printf("%s\n",s);
 			return ERROR;	
+		}
 }
 int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct *O){
 	int table_number;
@@ -1442,8 +1443,10 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	memset(O,0,sizeof(arg_struct));
 	table_number = how_many_tb(middle_buffer[1],O);
 	O->table_number=table_number;
-	if(table_number==ERROR)
+	if(table_number==ERROR){
+		printf("table number error\n");
 		return ERROR;
+	}
 	if(table_number==2){
 		ex_col_result=extract_col2(O,middle_buffer[0]);
 		if(ex_col_result==ERROR)
@@ -1632,14 +1635,30 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 				for(j = 0;(offset=myisalpha3(s+i))==1;i++,j++){
 					middle_buffer[0][j] = *(s+i);
 					if(*(s+i) == 0)//if it does not contain from
+					{
+	//					printf("does not contain from\n");
 						return ERROR;
+					}
 				}
-				if(offset==ERROR)
+				if(offset==ERROR){
+	//				printf("offset error\n");
 					return ERROR;
+				}
 				i+=offset;
 				middle_buffer[0][j] = 0;//add \0
 				sign_flag[0] = 1;
 				state = 2;
+				break;
+			}
+			else if(s[i]=='*'){
+	//			printf("invalid char\n");
+	//			return ERROR;
+				middle_buffer[0][0]='*';
+				state = 2;
+				i++;
+				offset=myisalpha3(s+i);
+				i+=offset;
+				sign_flag[0]=1;
 				break;
 			}
 			else

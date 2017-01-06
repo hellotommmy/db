@@ -1,6 +1,6 @@
-dbms:main.o comm.o queue.o create.o drop.o insert.o select.o group.o create_table.o drop_tbale.o insert_table.o select_basic.o
+dbms:main.o comm.o queue.o create.o drop.o insert.o select.o group.o create_table.o drop_table.o insert_table.o select_basic.o
 
-	gcc -o dbms main.o comm.o queue.o create.o drop.o insert.o select.o group.o  create_table.o drop_tbale.o insert_table.o select_basic.o
+	gcc -o dbms main.o comm.o queue.o create.o drop.o insert.o select.o group.o  create_table.o drop_table.o insert_table.o select_basic.o
 
 main.o:main.c
 
@@ -52,4 +52,4 @@ select_basic:select_basic.c
 
 clean:
 
-	rm dbms main.o comm.o queue.o create.o drop.o insert.o select.o group.o  create_table.o drop_tbale.o insert_table.o select_basic.o
+	rm dbms main.o comm.o queue.o create.o drop.o insert.o select.o group.o  create_table.o drop_table.o insert_table.o select_basic.o

@@ -76,7 +76,7 @@ typedef struct {
     char join[2][MAX_TABLE_NAME_LEN];//join columns
     char filter[2][MAX_TABLE_NAME_LEN];//filter columns
     char amb_filter[2][MAX_TABLE_NAME_LEN];   
-    int op[2];//filter and join operation, 0 means no op
+    int op[2];//filter operation, 0 means no op
     int amb_op[2];
     aggregation agg[3][MAX_ITEMS_IN_TABLE];
     int agg_number[3];
@@ -89,10 +89,65 @@ nlist *hashtab[HASHSIZE];
 int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int *col_type);
 int drop(char *s);
 int insert(char *table_name, int col, int_or_char *inchar);
-int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, char *table, char *selectcol, int op, int_or_char constant);
-int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2);
-int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *selectcol, int op, int_or_char constant);
-int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *table2,char *groupcol2,aggregation *agg2, int num2, aggregation *unknown,int num, char *selectcol1, int amb1, int op1,  int_or_char constant1, char *selectcol2, int amb2, int op2, int_or_char constant2,  char *selectcol3_1, int amb3_1, int op3, char *selectcol3_2, int amb3_2);
+int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
+ int num, 
+ char *table, 
+ char *selectcol, 
+ int op, 
+ int_or_char constant);
+
+int select_join(
+    char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
+    int num1,
+    char *table1,
+    char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
+    int num2,
+    char *table2,
+    char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
+    int num,
+
+    char *selectcol1,
+    int amb1,
+    int op1, 
+    int_or_char constant1,
+    char *selectcol2,
+    int amb2,
+    int op2,
+     int_or_char constant2,
+     char *selectcol3_1,
+     int amb3_1,
+     int op3, 
+     char *selectcol3_2,
+     int amb3_2);
+
+int group_simple(char *table, char *groupcol, 
+    aggregation *agg, int num, 
+    char *selectcol, int op, 
+    int_or_char constant);
+int group_join(char *table1, 
+    char *groupcol1,
+    aggregation *agg1,
+     int num1,
+     char *table2,
+     char *groupcol2,
+     aggregation *agg2, 
+     int num2, 
+     aggregation *unknown,
+     int num, 
+     
+     char *selectcol1, 
+     int amb1, 
+     int op1,  
+     int_or_char constant1, 
+     char *selectcol2, 
+     int amb2, 
+     int op2,
+    int_or_char constant2,  
+     char *selectcol3_1, 
+     int amb3_1, 
+     int op3, 
+     char *selectcol3_2, 
+     int amb3_2);
 
 int writeonepage(int buffnum,char *table_buff, char *buff, table_head head, int *printbit, int num, int_or_char constant, int op);
 int writetobuff(char *table_buff, table_head head,FILE *fp, int_or_char constant, int *printbit, int num, int op);

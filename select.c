@@ -11,6 +11,7 @@
 int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, char *table, char *selectcol, int op, int_or_char constant){
     //列名s，列名数量，表名，需要选择的列 操作种类（编号按ppt），常量 （注：如果是select * 情况，则num=0，没有where的情况，op=0）
     //投影
+    printf("number:%d\n",num);
     char name[128];
     int printbit[num+2];
     sprintf(name, "./db/%s.tbl",table);
@@ -23,13 +24,14 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     table_head head;
     
     fread(&head, sizeof(table_head), 1, fp);
-    
+    printf("%s\n",head.col_name[1] );
     int i,j = -1;
     int star = (num == 0);
     /***** judge ****/
     if (star) {
         num = head.col_num;
         for (i = 1; i <= head.col_num; i++) {
+            printf("******\n");
             printbit[i] = i - 1;
         }
     } else {
