@@ -439,9 +439,6 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 	j=0;
 //	if(which_table[0]==1&&which_table[1]==1)
 //		return ERROR;
-	printf("~~~~~~~~~~~~~~~~~~~~~\n");
-	printf("col 1 is not ambiguous if a 1 appears:%d\n",which_table[0]);
-	printf("col 2 is not ambiguous if a 1 appears:%d\n",which_table[1]);
 	if(which_table[0]==1){
 		//table 1 is chosen
 		//need to choose table 2
@@ -696,6 +693,8 @@ int filter(arg_struct *O,char *s,int mode){
 }
 
 int group_check(char *s ,arg_struct *O,int mode){
+	//some bugs need to be fixed:allow only 1 group col
+	//should not expect ,
 	if(mode==2){
 		if(O->which_group==0)
 			return ERROR;
@@ -725,6 +724,10 @@ int group_check(char *s ,arg_struct *O,int mode){
 			buffer[j++]=s[i++];
 		int result;
 		result=which_table(O->table[0],O->table[1],buffer)+1;
+		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
+			printf("col_name mismatch\n");
+			return ERROR;
+		}
 		if(result==4||result==ERROR)
 			return ERROR;
 		if(result==3)
@@ -756,7 +759,7 @@ int group_check(char *s ,arg_struct *O,int mode){
 		//default 1 table
 		if(O->which_group==0)
 			return ERROR;
-		if(strcmp(O->group_col,s)!=0)
+		if(strcmp(O->agg[0][0].col_name,s)!=0)
 			return ERROR;
 		strcpy(O->agg[0][0].col_name,O->group_col);
 		return OK;
@@ -1422,7 +1425,8 @@ int main(int argc, char const *argv[])
 }*/
 int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_flag[6]){
 		int how_many;
-		if(format_check(s,middle_buffer,sign_flag)!=ERROR){	
+		if(format_check(s,middle_buffer,sign_flag)!=ERROR){
+		printf("---------------------------one select-----------------------\n");	
 			printf("middle_buffers:|%s|%s|%s|%s|%s|%s|\n", middle_buffer[0],middle_buffer[1],middle_buffer[2],middle_buffer[3],middle_buffer[4],middle_buffer[5]);
 			if((how_many=parse_select_begin(middle_buffer,sign_flag,O))!=ERROR)
 			{
@@ -1459,6 +1463,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 			return ERROR;
 		if(O->which_group==1)//to satisfy argument API
 			strcpy(O->agg[0][0].col_name,O->group_col);
+
 	}
 	if(sign_flag[5]==1){
 		group_by_res=group_check(middle_buffer[5],O,table_number);
@@ -1492,33 +1497,89 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	if(O->num_cols[0]==0&&O->num_cols[1]==0&&O->num_cols[2]==0)
 		printf("all columns\n");
 	else{
-//		if(O->num_cols[0]){
-//			printf("table 1 has %d colums\n",O->num_cols[0] );
-//			for(j=0;)
-//		}
-		for(i=0;i<3;i++){
-			printf("table %d:\n",i );
-			for(j=0;j<O->num_cols[i];j++){
-				printf("%s\t",O->cols[i][j+1]);
+		if(O->num_cols[0]){
+			printf("table 1 has %d colums to output\n",O->num_cols[0] );
+			for(j=0;j<O->num_cols[0];j++){
+				printf("%s\t",O->cols[0][j+1]);
+			}
+		}
+		if(O->num_cols[1]){
+			printf("table 1 has %d colums to output:\n",O->num_cols[1] );
+			for(j=0;j<O->num_cols[1];j++){
+				printf("%s\t",O->cols[1][j+1]);
+			}
+		}
+		if(O->num_cols[2]){
+			printf("ambiguous columns according to parser:\n" );
+			for(j=0;j<O->num_cols[2];j++){
+				printf("%s\t",O->cols[2][j+1]);
 			}
 		}
 	}
-	printf("filtering constants:\n");
-	printf("operations\n");
-	printf("aggregations:\n");
-		for(i=0;i<3;i++){
-			printf("table %d aggs:\n", i);
+	if(O->op[0]){
+		printf("filtering constant1:%s\n",O->filter[0]);
+		printf("operation number1:%d\n",O->op[0]);
+		if(O->op[0]>=7&&O->op[0]<=10)
+			printf("filtering constant:%s\n",O->inchar[0].varchar );
+		else
+			printf("filtering constant:%d\n",O->inchar[0].i );
+
+	}
+	if(O->op[1]){
+		printf("filtering constant2:%s\n",O->filter[1]);
+		printf("operation number2:%d\n",O->op[1]);
+		if(O->op[1]>=7&&O->op[1]<=10)
+			printf("filtering constant:%s\n",O->inchar[1].varchar );
+		else
+			printf("filtering constant:%d\n",O->inchar[1].i );
+
+	}
+	if(O->amb_op[0]){
+		printf("unknown filtering constant1:%s\n",O->amb_filter[0]);
+		printf("unknown operation number1:%d\n",O->amb_op[0]);
+		if(O->amb_op[0]>=7&&O->amb_op[0]<=10)
+			printf("filtering constant:%s\n",O->amb_inchar[0].varchar );
+		else
+			printf("filtering constant:%d\n",O->amb_inchar[0].i );		
+	}
+	if(O->amb_op[1]){
+		printf("unknown filtering constant2:%s\n",O->amb_filter[1]);
+		printf("unknown operation number2:%d\n",O->amb_op[1]);
+		if(O->amb_op[1]>=7&&O->amb_op[1]<=10)
+			printf("filtering constant:%s\n",O->amb_inchar[1].varchar );
+		else
+			printf("filtering constant:%d\n",O->amb_inchar[1].i );		
+	}
+	if(O->join[0][0])
+	{
+		printf("join col 1:%s\n",O->join[0] );
+		printf("join col 2:%s\n",O->join[1] );
+		if(O->amb_join)
+			printf("according to parser, it is ambiguous\n");
+	}
+	for(i=0;i<2;i++){
+		if(O->agg_number[i]){
+			printf("table %d aggs:\n", i+1);
 			for(j=0;j<O->agg_number[i];j++){
-				printf("op:%d\t",O->agg[i][j+1].op);
+				printf("operation:1sum,2count,3avg,4min,5max:%d\t",O->agg[i][j+1].op);
 				printf("col_name:%s\n",O->agg[i][j+1].col_name );
 			}
 		}
-
+	}
+	if(O->agg_number[2]){
+		printf("ambiguous aggs according to parser:\n");
+		for(j=0;j<O->agg_number[2];j++){
+			printf("operation:1sum,2count,3avg,4min,5max:%d\t",O->agg[2][j+1].op);
+			printf("col_name:%s\n",O->agg[2][j+1].col_name );
+		}
+	}
 	if(sign_flag[5]==1){
-		printf("group by:\n");
+		printf("group by:\t");
 		printf("%s\n",O->agg[O->which_group-1][0].col_name);
 	}
-	
+	if(sign_flag[5]==1){
+		;
+	}
 
 				
 
