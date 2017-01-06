@@ -1,0 +1,10 @@
+drop table col1tab1;
+drop table  col2tab1;
+drop table  col3tab1 ;
+drop table col4tab1;
+drop table  col5tab1;
+drop table  col1tab2;
+drop table  col2tab2;
+drop table  col3tab2;
+drop table  col4tab2;
+drop table  col5tab2;

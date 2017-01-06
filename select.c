@@ -82,7 +82,7 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     } else {
         printf("%s",cols[1]);
         for (j = 2; j <= num; j++) 
-        	printf("|%s",cols[j]);
+            printf("|%s",cols[j]);
         printf("\n");
     }
     int pagenum = head.datapage;
@@ -586,7 +586,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     
     /****** 从另一个table中每次读入一个page，进行选择和连接 *********/
     char buff[PAGE_LEN];
-	if (size1 <= size2){
+    if (size1 <= size2){
         int buffnum;
         buffnum = writetobuff(table_buff, head1, fp1, constant1, printbit1, num1_store, op1);
         int pagenum = head2.datapage;

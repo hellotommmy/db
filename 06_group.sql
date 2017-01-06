@@ -22,6 +22,7 @@ insert into tab2 values (5, 30, 'tab 2 data');
 
 
 -- correct statement -- 
+select id, count(*) from tab2,tab1 where tab1.id=tab2.id and id > 0 group by count;
 
 select id, count(*) from tab1 where id > 0 group by id;
 

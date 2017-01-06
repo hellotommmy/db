@@ -1594,11 +1594,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 		printf("group by:\t");
 		printf("%s\n",O->agg[O->which_group-1][0].col_name);
 	}
-	if(sign_flag[5]==1){
-		;
-	}
-
-				
+	printf("\n---------------parser info end--------------\n");			
 
 
 	if(sign_flag[5]==0&&table_number==1)
@@ -1687,9 +1683,16 @@ int myisalpha4(char *c){
 	return 1;
 }
 int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
+	//extract info into 6 strings
 	unsigned char state = 0;
 	short i = 0;
 	short j = 0;
+	while(s[i]!=0){
+		if(s[i]=='\n')
+			s[i]=' ';
+		i++;
+	}
+	i=0;
 	for(j=0;j<6;j++){
 		memset(middle_buffer[j],0,1000);
 		sign_flag[j]=0;
@@ -1706,7 +1709,7 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 			if(*(s+i)=='s'){
 				i++;
 				if(*(s+i)=='e'&&*(s+i+1)=='l'&&*(s+i+2)=='e'
-					&&*(s+i+3)=='c'&&*(s+i+4)=='t'&&*(s+i+5)==' '){
+					&&*(s+i+3)=='c'&&*(s+i+4)=='t'&&(*(s+i+5)==' '||s[i+5]=='\n')){
 					state = 1;
 					i+=6;
 					}
@@ -1717,14 +1720,14 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 			break;
 
 			case 1:
-			while(*(s+i)==' ')
+			while(*(s+i)==' '||s[i]=='\n')
 				i++;
 			if(myisalpha2(*(s+i))){
 				for(j = 0;(offset=myisalpha3(s+i))==1;i++,j++){
 					middle_buffer[0][j] = *(s+i);
 					if(*(s+i) == 0)//if it does not contain from
 					{
-	//					printf("does not contain from\n");
+					printf("does not contain from\n");
 						return ERROR;
 					}
 				}

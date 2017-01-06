@@ -20,7 +20,10 @@ int myisalpha1(char c){
 }
 int myisnumber(char c);
 int myisnumber(char c){
-	return c<='9'&&c>='0'?1:0;
+	if( c<='9'&&c>='0'||c=='-'||c=='+')
+		return 1;
+	else
+		return 0;
 }
 int check_format(char *s);
 int check_format(char *s){
@@ -88,18 +91,24 @@ int parse_insert(char *s,int_or_char t[MAX_ITEMS_IN_TABLE],char table_name[MAX_T
 	int success;
 	success = sscanf(s,"%9s%9s%128s%6s",grammar[0],grammar[1],table_name,grammar[2]);
 	//printf("%d\n",success );
-	if(success!=4)
+	if(success!=4){
 		return ERROR;
-	if(check_format(s)==ERROR)
+	}
+	if(check_format(s)==ERROR){
 		return ERROR;
-	if(!(strcmp(grammar[0],compare[0])==0 &&strcmp(grammar[1],compare[1])==0 &&strcmp(grammar[2],compare[2])==0) )
+	}
+	if(!(strcmp(grammar[0],compare[0])==0 &&strcmp(grammar[1],compare[1])==0 &&strcmp(grammar[2],compare[2])==0) ){
+		//		printf("1\n");
 		return ERROR;
+	}
 
 	for(i=0;i<BUFFER_LEN;i++){
 		buffer[i] = 0;
 	}
-	if(extract_items_between_brackets_i(s,buffer)==ERROR)
+	if(extract_items_between_brackets_i(s,buffer)==ERROR){
+		printf("666\n");
 		return ERROR;
+	}
 	int pieces;
 	pieces = cut_into_pieces(buffer,t);
 //		printf("table_name is %s\n",table_name );
@@ -109,12 +118,14 @@ int parse_insert(char *s,int_or_char t[MAX_ITEMS_IN_TABLE],char table_name[MAX_T
 //		else
 //			printf("the %dth column:varchar%s\n",i,t[i].varchar);
 //			}
+	//printf("pieces:%d\n",pieces );
 	return pieces;//pieces is ERROR if syntax error
 
 }
 int extract_items_between_brackets_i(char *command_buffer,char *info_between_brackets);
 
 int extract_items_between_brackets_i(char *command_buffer,char *info_between_brackets){
+	bool_t in_varchar=FALSE;
 	int i=0;
 	while(command_buffer[i]!='('){
 		if(command_buffer[i]==';')
@@ -124,8 +135,16 @@ int extract_items_between_brackets_i(char *command_buffer,char *info_between_bra
 	i++;
 	int j=0;
 	while(command_buffer[i]!=')'){
-		if(command_buffer[i]==';'||command_buffer[i]=='(')
-			return ERROR;
+		if(command_buffer[i]=='\''){
+			if(in_varchar  ==  FALSE)
+				in_varchar = TRUE;
+			else
+				in_varchar = FALSE;
+		}
+		if(command_buffer[i]==';'||command_buffer[i]=='('||command_buffer[i]==0){
+			if(in_varchar==FALSE)
+				return ERROR;
+		}
 		info_between_brackets[j++] = command_buffer[i++];
 	}
 	i++;
@@ -139,6 +158,7 @@ int extract_items_between_brackets_i(char *command_buffer,char *info_between_bra
 
 int cut_into_pieces(char *s, int_or_char t[MAX_ITEMS_IN_TABLE+1]);
 int cut_into_pieces(char *s, int_or_char t[MAX_ITEMS_IN_TABLE+1]){
+	//printf("%s\n",s );
 	int word_count = 1;
 	int i = 0 ;
 	int j = 0;
@@ -204,8 +224,10 @@ int cut_into_pieces(char *s, int_or_char t[MAX_ITEMS_IN_TABLE+1]){
 			}
 			else if(*(s+i)==0)
 				state_reg = 5;
-			else
-				t[word_count].varchar[j++]=*(s+i);
+			else{
+				t[word_count].varchar[j]=*(s+i);
+				j++;
+			}
 
 			i++;
 			break;
@@ -245,6 +267,7 @@ int cut_into_pieces(char *s, int_or_char t[MAX_ITEMS_IN_TABLE+1]){
 			break;
 
 			case 6:
+			//printf("word_count:%d\n",word_count );
 			return word_count-1;
 			break;
 

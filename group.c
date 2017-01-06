@@ -1184,3 +1184,4 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
 }
 
 
+

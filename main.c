@@ -241,7 +241,7 @@ void extract_col(){
 }
 
 
-
+int number_of_lines;
 void do_operation(){
 	//have a line of operation, decide what to do
 	char table_name[MAX_TABLE_NAME_LEN];
@@ -253,6 +253,7 @@ void do_operation(){
 	arg_struct O;
 	int i;
 //	int k;
+	printf("%s\n",command_buffer );
 	switch(which_type){
 	case 1:  
 		parse_create(command_buffer,&error_flag);
@@ -272,30 +273,33 @@ void do_operation(){
 		else if(error_flag==2)
 			printf("Can’t create table\n");
 		else{
-			printf("Syntax error\n");
+			printf("Syntax error1\n");
 			}
 		break;
 	case 2:
 		if(parse_drop(command_buffer,col_name[0])==OK)
 			drop(col_name[0]);
 		else
-			printf("Syntax error\n");
+			printf("Syntax error2\n");
 		break;
 	case 3:
+	//printf("%s\n",command_buffer );
+	
 		cols = parse_insert(command_buffer,inchar,table_name);
-		if(cols!=ERROR){
-			insert(table_name,cols,&(inchar[1]));
+		//printf("cols:%d\n",cols );
+		if(cols==ERROR){
+			//printf("Syntax error1\n");
+			printf("in insert error:%d\n",number_of_lines);
 		}
 		else
-			printf("Syntax error\n");
+			insert(table_name,cols,&(inchar[1]));
 		break;
 	case 4:
 	check_format = parse_select(&O,command_buffer,middle_buffer,sign_flag);
 	if(check_format==ERROR){
-		printf("Syntax error\n");
+		printf("Syntax error1\n");
 		break;
 		}
-	printf("enter op\n");
 	if(O.table_number==1){
 		if(O.agg_number[0]!=0||O.agg_number[1]!=0||O.agg_number[2]!=0){
 			//1 table yes agg
@@ -491,6 +495,7 @@ void do_operation(){
 	}
 	//printf("%s\n",command_buffer);
 }
+
 //read a valid command into command buffer, i.e. not an explanation
 int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 	int state_reg;
@@ -499,8 +504,12 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 	char waste[1000];
 	state_reg=0;
 	int i;
+	number_of_lines++;
+	bool_t in_varchar=FALSE;
 	while(leaving_flagn){
 	is_EOF=fscanf(ptr,"%c",&which_command);
+	//if(number_of_lines==115)
+		//printf("%c",which_command );
 	if(is_EOF==EOF)
 		return -1;
 	switch(state_reg){
@@ -536,7 +545,9 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 					break;
 				default :
 					state_reg = 0;
-					printf("Syntax error\n");
+				//	printf("in varchar?:%d\n",in_varchar );
+				//	printf("%d\n",number_of_lines );
+					printf("Syntax error4,char = %c\n",which_command);
 					fgets(waste,1000,ptr);
 			}
 			break;
@@ -545,28 +556,42 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 				state_reg = 5;
 			else{
 				state_reg = 0 ;
-				printf("Syntax error\n");
+				printf("Syntax error5\n");
 				fgets(waste,1000,ptr);
 				}
 			break;
 		case 3:
+					//printf("char before:%c\n",which_command );
 			fseek(ptr,-2,1);
 			i=0;
+					//printf("char after:%c\n",which_command );
 			state_reg = 4;
 			break;
 		case 4:
-			command_buffer[i] = which_command;
-			i++;
+			command_buffer[i] = which_command;	
+			if(which_command=='\''){
+				if(in_varchar==TRUE)
+					in_varchar=FALSE;
+				else
+					in_varchar=TRUE;
+			}
+
 			if(which_command==';'){
-				command_len = i;
-				leaving_flagn = 0;
-				state_reg = 0;//this may seem useless, and is useless, as a matter of fact
+				if(in_varchar==TRUE){
+					state_reg=4;
 				}
-			else if(which_command=='-'){
-				printf("Syntax error\n");
+				else{
+					command_len = i;
+					leaving_flagn = 0;
+					state_reg = 0;
+				}
+			}
+			else if(which_command==0){
+				printf("Syntax error6\n");
 				state_reg = 2;
 				clear_buffer();
 			}
+			i++;
 			break;
 		case 5:
 			if(which_command=='\n')
