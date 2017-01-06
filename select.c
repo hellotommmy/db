@@ -222,6 +222,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                         }
                     }
                     //未有歧义
+                    printbit1[num1+1] = i;
                     strcpy(cols1[num1+1], unknowncols[t]);
                     num1++;
                     break;
@@ -235,6 +236,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                     
                     if (strcmp(head2.col_name[j], unknowncols[t]) == 0) {
                         strcpy(cols2[num2+1], unknowncols[t]);
+                        printbit2[num2+1] = j;
                         num2++;
                         break;
                     }
@@ -251,7 +253,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     }
     num1_store = num1;
     num2_store = num2;
-    int type1,type2;
+    int type1=0,type2=0;
      /******* judge selectcol1 in table1 *********/
     if (op1 != 0) {
         if (!amb1) {
