@@ -1505,7 +1505,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 			return ERROR;
 	}		
 	printf("current info:\n");
-	printf("tables:\t" );
+	printf("%d tables:\t",O->table_number );
 	for(i=0;i<2;i++){
 		if(table_number-1>=i)
 			printf("table %d:%s\n",i+1,O->table[i] );
