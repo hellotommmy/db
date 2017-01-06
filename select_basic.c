@@ -693,7 +693,7 @@ int filter(arg_struct *O,char *s,int mode){
 }
 
 int group_check(char *s ,arg_struct *O,int mode){
-	//some bugs need to be fixed:allow only 1 group col
+	//TODO:some bugs need to be fixed:allow only 1 group col
 	//should not expect ,
 	if(mode==2){
 		if(O->which_group==0)
@@ -711,10 +711,20 @@ int group_check(char *s ,arg_struct *O,int mode){
 		buffer[j]=0;
 		while(s[i]==' ')
 			i++;
-		if(s[i]==',')
+		if(s[i]==','){
+		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
+			printf("col_name mismatch\n");
+			return ERROR;
+		}
 			goto need_more_info;
-		if(s[i]==0)
+		}
+		if(s[i]==0){
+		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
+			printf("col_name mismatch\n");
+			return ERROR;
+		}
 			goto need_more_info;
+		}
 		i++;
 		while(s[i]==' ')
 			i++;
@@ -723,6 +733,7 @@ int group_check(char *s ,arg_struct *O,int mode){
 		while(s[i]!=' '&&s[i]!=0)
 			buffer[j++]=s[i++];
 		int result;
+		printf("buffer:%s\n",buffer );
 		result=which_table(O->table[0],O->table[1],buffer)+1;
 		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
 			printf("col_name mismatch\n");
@@ -849,8 +860,6 @@ int how_many_tb(char *s,arg_struct *O);
 int extract_col1(arg_struct * O,char *s);
 int extract_col2(arg_struct * O,char *s);
 int extract_col2(arg_struct * O,char *s){
-//	table[1]=O->table[0];
-//	table[2]=O->table[1];
 	int i,j,k;
 	char buffer[MAX_TABLE_NAME_LEN];
 	O->which_group=0;
@@ -987,8 +996,9 @@ int extract_col2(arg_struct * O,char *s){
 	else
 		i+=3;
 	if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]
-		>=2)
+		>=2){
 		return ERROR;
+	}
 	else if(simple_col_number[0]+simple_col_number[1]+simple_col_number[2]==1){
 		//need to put simple to group by col
 		if(simple_col_number[0]){
@@ -1042,6 +1052,10 @@ int extract_col2(arg_struct * O,char *s){
 		{
 			j++;
 			k=0;
+			while(buffer[j]==' ')
+				j++;
+			if(buffer[j]==0)
+				return ERROR;
 			while(buffer[j]!=0){
 				buffer[k++]=buffer[j++];
 			}
@@ -1065,9 +1079,11 @@ int extract_col2(arg_struct * O,char *s){
 	if(table_res==ERROR)
 		return ERROR;
 	if(table_res==3){
-		if(op!=2)
+		if(op!=2){
+
 			return ERROR;
-		if(buffer[1]!=0);
+		}
+		if(buffer[1]!=0)
 			return ERROR;
 		table_res=2;
 	}
@@ -1472,6 +1488,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	}
 	int filter_res;
 	if(sign_flag[2]){
+//		printf("have reached here\n");
 		filter_res = filter(O,middle_buffer[2],table_number); 
 //		printf("***********************O->amb_join = %d\n",O->amb_join );
 		if(filter_res==ERROR)
