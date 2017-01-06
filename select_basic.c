@@ -44,8 +44,8 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 	//-1 for error
 	int i=0;
 	int j=0;
-	if(table2[0]==0)
-		goto one_table;
+	//if(table2[0]==0)
+	//	goto one_table;
 
 	while(s[i]==' ')
 		i++;
@@ -269,6 +269,7 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 			}
 		}
 		else{
+		//	printf("equal***********\n");
 			//real equal
 			//check if is string
 			if(myisalpha2(s[i])){
@@ -674,6 +675,7 @@ int filter(arg_struct *O,char *s,int mode){
 		if(status==ERROR||status==4)
 			return ERROR;
 		O->op[0]=op;
+//		printf("********************op is %d\n",op );
 		strcpy(O->filter[0],col_buff);
 		if(op>=1&&op<=6){
 			//int

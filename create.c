@@ -7,12 +7,6 @@
 //
 #include "comm.h"
 int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int *col_type){
-        int k;
-        printf("table_name:%s\n",table_name );
-          printf("col items:\n");
-         for(k=0;k<col;k++){
-              printf("%s,type is %d\n",col_name[k],col_type[k] );
-         }
     char name[128];
     sprintf(name, "./db/%s.tbl",table_name);
     if (access(name, 0) == 0){
@@ -32,7 +26,7 @@ int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABL
     FILE *fp;
     fp = fopen(name, "wb");
     int size = head.datapage*PAGE_LEN;
-    if (fwrite(&head, sizeof(size), 1, fp) != 1) return -1;
+    fwrite(&head, sizeof(char),size, fp);
     page_init(head.freepage,fp);
     printf("Successfully created table %s!\n",table_name);
     fclose(fp);

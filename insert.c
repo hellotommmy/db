@@ -7,13 +7,6 @@
 //
 #include "comm.h"
 int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
-	int k;
-	for(k=0;k<col;k++){
-		if(inchar[k].is_int==TRUE)
-			printf("integer %d\n",inchar[k].i);
-		else
-			printf("varchar %s\n",inchar[k].varchar);
-			}
     char name[128];
     sprintf(name, "./db/%s.tbl",table_name);
     if (access(name, 0) == -1){
@@ -25,8 +18,7 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
  //   printf("____________%s\n",name );
     table_head head;
    // printf("*********insert%s\n",head.col_name[1] );
-    if (fread(&head, sizeof(table_head), 1, fp) != 1) return -1;
-    printf("*********insert%s\n",head.col_name[1] );
+    fread(&head, sizeof(table_head), 1, fp);
     if (head.col_num != col) {
         printf("Wrong number of columns\n");  //列数不对
         return  -1;

@@ -12,6 +12,7 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     //列名s，列名数量，表名，需要选择的列 操作种类（编号按ppt），常量 （注：如果是select * 情况，则num=0，没有where的情况，op=0）
     //投影
     printf("number:%d\n",num);
+    printf("operation:%d\n", op);
     char name[128];
     int printbit[num+2];
     sprintf(name, "./db/%s.tbl",table);
@@ -24,14 +25,13 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     table_head head;
     
     fread(&head, sizeof(table_head), 1, fp);
-    printf("%s\n",head.col_name[1] );
+    
     int i,j = -1;
     int star = (num == 0);
     /***** judge ****/
     if (star) {
         num = head.col_num;
         for (i = 1; i <= head.col_num; i++) {
-            printf("******\n");
             printbit[i] = i - 1;
         }
     } else {
@@ -128,6 +128,9 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
  )*/
  
 int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2){
+    printf("________________________________\n");
+    printf("selectcol1:%s\n",selectcol1);
+    printf("op1:%d,amb1 = %d, constant1 = %d\n", op1,amb1,constant1.i);
     char name1[128];
     char name2[128];
     int num1_store,num2_store;
@@ -379,6 +382,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                     if (strcmp(head1.col_name[j], selectcol2) == 0) {
                         printbit1[num1 + 1] = j;
                         if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant1.is_int << j%32)){
+                 //           printf("********************************\n");
                             if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
                             else printf("Predicate %s error\n",constant1.varchar);
                             fclose(fp2);
