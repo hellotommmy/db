@@ -131,6 +131,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     printf("________________________________\n");
     printf("selectcol1:%s\n",selectcol1);
     printf("op1:%d,amb1 = %d, constant1 = %d\n", op1,amb1,constant1.i);
+    printf("amb3:%d\n",amb3_1);
     char name1[128];
     char name2[128];
     int num1_store,num2_store;
@@ -304,9 +305,9 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                     
                     if (strcmp(head2.col_name[j], selectcol1) == 0) {
                         printbit2[num2 + 1] = j;
-                        if (  (head2.col_type[j/32] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
-                            if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
-                            else printf("Predicate %s error\n",constant2.varchar);
+                        if (  (head2.col_type[j/32] & (1 << (j%32) ) ) ^ (constant1.is_int << j%32)){
+                            if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
+                            else printf("Predicate %s error\n",constant1.varchar);
                             fclose(fp1);
                             fclose(fp2);
                             return -1;
@@ -381,10 +382,10 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
                     
                     if (strcmp(head1.col_name[j], selectcol2) == 0) {
                         printbit1[num1 + 1] = j;
-                        if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant1.is_int << j%32)){
+                        if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
                  //           printf("********************************\n");
-                            if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
-                            else printf("Predicate %s error\n",constant1.varchar);
+                            if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
+                            else printf("Predicate %s error\n",constant2.varchar);
                             fclose(fp2);
                             fclose(fp1);
                             return -1;
@@ -865,6 +866,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num1,char
     }
     fclose(fp1);
     fclose(fp2);
+    printf("________________________________\n");
     return 0;
 }
 
