@@ -60,7 +60,9 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
                 printbit[j] = i;
                 /**** 判断聚集列是不是int类型 ****/
                 if (  agg[j].op != 2 && ((head.col_type[i/32] & (1 << (i%32) ) ) == 0) ){
-                    printf("Column %s is not int and can’t be used in aggregation",agg[j].col_name);
+                    printf("Column %s is not int and can’t be used in aggregation\n",agg[j].col_name);
+                    fclose(fp);
+                    return -1;
                 }
                 break;
             }
@@ -245,7 +247,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
  int op3,                                                //连接条件的操作（同上的op编码，op=0表示无此条件）
  char *seletcol3_2                                       //连接条件的第而个列（来自table2）
  int amb3_2*/
- 
+
 int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *table2,char *groupcol2,aggregation *agg2, int num2, aggregation *unknown,int num, char *selectcol1, int amb1, int op1,  int_or_char constant1, char *selectcol2, int amb2, int op2, int_or_char constant2,  char *selectcol3_1, int amb3_1, int op3, char *selectcol3_2, int amb3_2){
     char name1[128];
     char name2[128];
@@ -333,11 +335,12 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
             }
         }
     }
-    /******** judge cols in table2 *********/
+    /******** judge cols in table2 *********/   
     if (num2) {
         for (j = 1; j <= num2; j++) {
             for (i = 0; i < head2.col_num; i++) {
                 if (strcmp(agg2[j].col_name, head2.col_name[i]) == 0){
+                
                     printbit2[j] = i;
                     if (  agg2[j].op != 2 && ((head2.col_type[i/32] & (1 << (i%32) ) ) == 0) ){
                         printf("Column %s is not int and can’t be used in aggregation",agg2[j].col_name);
@@ -420,6 +423,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     }
                     //未有歧义
                     strcpy(agg1[num1+1].col_name, unknown[t].col_name);
+                    printbit1[num1+1] = i;
                     agg1[num1+1].op = unknown[t].op;
                     if (  unknown[t].op != 2 && ((head1.col_type[i/32] & (1 << (i%32) ) ) == 0) ){
                         printf("Column %s is not int and can’t be used in aggregation",unknown[t].col_name);
@@ -438,6 +442,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                 for (j = 0; j < head2.col_num; j++) {
                     
                     if (strcmp(head2.col_name[j], unknown[t].col_name) == 0) {
+                    	printbit2[num2+1] = j;
                         strcpy(agg2[num2+1].col_name, unknown[t].col_name);
                         agg2[num2+1].op = unknown[t].op;
                         if (  unknown[t].op != 2 && ((head2.col_type[j/32] & (1 << (j%32) ) ) == 0) ){
@@ -464,8 +469,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
     num2_store = num2;
     
     int type;
-    int *printbit;
-    aggregation *agg;
+  //  int *printbit;
+  //  aggregation *agg;
     /******* get group col **********/
     int varoffset1[head1.col_num - head1.intnum+1];
     int intarry1[head1.intnum];
@@ -473,31 +478,31 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
     int varoffset2[head2.col_num - head2.intnum+1];
     int intarry2[head2.intnum];
     char varchararry2[(head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1];
-    char groupcol[MAX_TABLE_NAME_LEN];
-    int *varoffset;
-    int *intarry;
-    char *varchararry;
-    table_head head;
-    if (groupcol2[0] == 0) {
-        strcpy(groupcol, groupcol1);
-        groupcol[strlen(groupcol1)]='\0';
+  //  char groupcol[MAX_TABLE_NAME_LEN];
+  //  int *varoffset;
+  //  int *intarry;
+  //  char *varchararry;
+  //  table_head head;
+   if (groupcol2[0] == 0) {
+ //       strcpy(groupcol, groupcol1);
+ //       groupcol[strlen(groupcol1)]='\0';
         type = grouptype1;
-        printbit = printbit1;
-        agg = agg1;
-        varoffset = varoffset1;
-        intarry = intarry1;
-        varchararry = varchararry1;
-        head = head1;
+ //       printbit = printbit1;
+ //       agg = agg1;
+ //       varoffset = varoffset1;
+ //       intarry = intarry1;
+ //       varchararry = varchararry1;
+  //      head = head1;
     } else {
-        strcpy(groupcol, groupcol2);
-        groupcol[strlen(groupcol2)]='\0';
+    //    strcpy(groupcol, groupcol2);
+    //    groupcol[strlen(groupcol2)]='\0';
         type = grouptype2;
-        printbit = printbit2;
-        agg = agg2;
-        varoffset = varoffset2;
-        intarry = intarry2;
-        varchararry = varchararry2;
-        head = head2;
+   //     printbit = printbit2;
+   //     agg = agg2;
+    //    varoffset = varoffset2;
+    //    intarry = intarry2;
+     //   varchararry = varchararry2;
+     //   head = head2;
     }
     
     /******* judge selectcol1 in table1 *********/
@@ -555,9 +560,9 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     
                     if (strcmp(head2.col_name[j], selectcol1) == 0) {
                         printbit2[num2 + 1] = j;
-                        if (  (head2.col_type[j/32] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
-                            if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
-                            else printf("Predicate %s error\n",constant2.varchar);
+                        if (  (head2.col_type[j/32] & (1 << (j%32) ) ) ^ (constant1.is_int << j%32)){
+                            if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
+                            else printf("Predicate %s error\n",constant1.varchar);
                             fclose(fp1);
                             fclose(fp2);
                             return -1;
@@ -632,9 +637,10 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     
                     if (strcmp(head1.col_name[j], selectcol2) == 0) {
                         printbit1[num1 + 1] = j;
-                        if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant1.is_int << j%32)){
-                            if (constant1.is_int) printf("Predicate %d error\n",constant1.i);
-                            else printf("Predicate %s error\n",constant1.varchar);
+                        if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
+                            //           printf("********************************\n");
+                            if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
+                            else printf("Predicate %s error\n",constant2.varchar);
                             fclose(fp2);
                             fclose(fp1);
                             return -1;
@@ -664,7 +670,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     printbit1[num1 + 1] = i;
                     if (amb3_1) {
                         for (j = 0; j < head2.col_num; j++) {
-                            if (strcmp(head2.col_name[j], selectcol3_1)==0) {
+                            if (strcmp(head2.col_name[j], selectcol3_1) == 0) {
                                 printf("Ambiguous column %s\n",selectcol3_1);
                                 fclose(fp1);
                                 fclose(fp2);
@@ -731,7 +737,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     printbit2[num2 + 1] = i;
                     if (amb3_2) {
                         for (j = 0; j < head1.col_num; j++) {
-                            if (strcmp(head1.col_name[j], selectcol3_2)==0) {
+                            if (strcmp(head1.col_name[j], selectcol3_2) == 0) {
                                 printf("Ambiguous column %s\n",selectcol3_2);
                                 fclose(fp1);
                                 fclose(fp2);
@@ -753,7 +759,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                 if (strcmp(head2.col_name[i], selectcol3_2) == 0) {
                     if (  head2.col_type[i/32] & (1 << (i%32) ) )  type2 = 1;
                     for (j = 0; j < head1.col_num; j++) {
-                        if (strcmp(head1.col_name[j], selectcol3_2)  == 0) {
+                        if (strcmp(head1.col_name[j], selectcol3_2)==0) {
                             printf("Ambiguous column %s\n",selectcol3_2);
                             fclose(fp2);
                             fclose(fp1);
@@ -789,6 +795,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
     }
     
     /******* 检查连接条件是否一致 ***********/
+    
     if (type1 ^ type2){ //have some problem
         printf("Join predicate error\n");
         fclose(fp1);
@@ -796,7 +803,9 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         return -1;
     }
     
-    
+    for (i = 0; i < HASHSIZE ;i++){
+        hashtab[i] = 0;
+    }
     
     
     /******* get size of each table **********/
@@ -810,6 +819,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
     nlist *group;
     /****** 从另一个table中每次读入一个page，进行选择和连接 *********/
     char buff[PAGE_LEN];
+
     if (size1 < size2){
         int buffnum;
         buffnum = writetobuff(table_buff, head1, fp1, constant1, printbit1, num1_store, op1);
@@ -825,11 +835,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
             while (index < *(int *)buff) {
                 
                 /****读出一个tuple的数据*****/
-                int varoffset2[head2.col_num - head2.intnum+1];
-                int intarry2[head2.intnum];
                 memcpy(varoffset2, p, (head2.col_num - head2.intnum+1)*sizeof(int));
                 memcpy(intarry2, p+(head2.col_num - head2.intnum+1)*sizeof(int), head2.intnum*sizeof(int));
-                char varchararry2[(head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1];
                 int i;
                 for (i = 0; i < (head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry2[i]=0;
                 memcpy(varchararry2, p+(head2.col_num+1)*sizeof(int), (varoffset2[head2.col_num - head2.intnum]+1)*sizeof(char));
@@ -857,7 +864,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         
                         other_p += sizeof(int);
                         int other_index = sizeof(int);
-                       //  printf("table_buff:%d\n",*(int *)(table_buff+other_pagenum*PAGE_LEN));
+                        //  printf("table_buff:%d\n",*(int *)(table_buff+other_pagenum*PAGE_LEN));
                         while (other_index < *(int *)(table_buff+other_pagenum*PAGE_LEN)) {
                             
                             int varoffset1[head1.col_num - head1.intnum+1];
@@ -886,19 +893,28 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                 if (!no_group) {
                                     find.is_int = type;
                                     if (type){
-                                    	if (groupcol2[0]==0) 
-                                        	find.i = intarry1[head.index[printbit[0]]];
-                                        else find.i = intarry2[head.index[printbit[0]]];
+                                        if (groupcol2[0]==0)
+                                            find.i = intarry1[head1.index[printbit1[0]]];
+                                        else find.i = intarry2[head2.index[printbit2[0]]];
                                         
-                                        }
+                                    }
                                     else {
-                                        memcpy(find.varchar,varchararry+varoffset[head.index[printbit[0]]]-varoffset[0],varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]);
+                                        if (groupcol2[0]==0) {
                                         
-                                        find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
+                                            memcpy(find.varchar,varchararry1+varoffset1[head1.index[printbit1[0]]]-varoffset1[0],varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]);
+                                            
+                                            find.varchar[varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]]='\0';
+                                        } else {
+                                        
+                                            memcpy(find.varchar,varchararry2+varoffset2[head2.index[printbit2[0]]]-varoffset2[0],varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]);
+                                            
+                                            find.varchar[varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]]='\0';
+                                        }
+                                        
                                     }
                                     
                                     if ((group = lookup(find,agg1,agg2,num1_store,num2_store) )!= NULL){
-										 group->a = find;
+                                        group->a = find;
                                         
                                     }
                                 } else {
@@ -911,13 +927,16 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                         
                                     }
                                 }
-                                for (i = 1; i <= num2; i++) {
+                                
+                                for (i = 1; i <= num1_store; i++) {
                                     if (agg1[1].op != 3) {
                                         group->res[i] = aggregation_op(group->res[i] , intarry1[head1.index[printbit1[i]]], agg1[i].op);
                                     } else {
                                         group->res[i] = aggregation_op(group->res[i] , intarry2[head2.index[printbit1[i]]], 1);
                                         group->res2[i] = aggregation_op(group->res2[i], intarry2[head2.index[printbit1[i]]], 2);
                                     }
+                                }
+                                for (i = 1; i <= num2_store; i++) {
                                     if (agg2[i].op != 3){
                                         group->res1[i] = aggregation_op(group->res1[i] , intarry2[head2.index[printbit2[i]]], agg2[i].op);
                                     } else {
@@ -942,6 +961,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         }
         
     }else {
+    
         int buffnum;
         buffnum = writetobuff(table_buff, head2, fp2, constant2, printbit2, num2_store, op2);
         int pagenum = head1.datapage;
@@ -1003,30 +1023,43 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                             /****** 判断是否满足条件 *******/
                             if (type2) {
                                 if (int_op(intarry1[head1.index[printbit1[num1 + 1]]],intarry2[head2.index[printbit2[num2 + 1]]],5)) flag += 1;
+                                
                             } else {
                                 memcpy(temp2, varchararry2+varoffset2[head2.index[printbit2[num2 + 1]]]-varoffset1[0], varoffset2[head2.index[printbit2[num1 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]);
                                 temp2[varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]]='\0';
                                 // printf("temp2:%s %s\n",temp2,temp1);
                                 if (var_op(temp1,temp2,7)) flag += 1;
-                                // printf("flag: %d\n",flag);
+                                
+                                
                             }
                             if (flag) {
-                                
+                             	flag=0;
                                 if (!no_group) {
                                     find.is_int = type;
                                     if (type){
-                                    	if (groupcol2[0]==0) 
-                                        	find.i = intarry1[head.index[printbit[0]]];
-                                        else find.i = intarry2[head.index[printbit[0]]];
+                                        if (groupcol2[0]==0)
+                                            find.i = intarry1[head1.index[printbit1[0]]];
+                                        else find.i = intarry2[head2.index[printbit2[0]]];
+                                        
                                     }
                                     else {
-                                        memcpy(find.varchar,varchararry+varoffset[head.index[printbit[0]]]-varoffset[0],varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]);
+                                        if (groupcol2[0]==0) {
                                         
-                                        find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
+                                            memcpy(find.varchar,varchararry1+varoffset1[head1.index[printbit1[0]]]-varoffset1[0],varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]);
+                                            
+                                            find.varchar[varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]]='\0';
+                                        } else {
+                                        
+                                            memcpy(find.varchar,varchararry2+varoffset2[head2.index[printbit2[0]]]-varoffset2[0],varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]);
+                                            
+                                            find.varchar[varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]]='\0';
+                                        }
+                                        
                                     }
                                     
                                     if ((group = lookup(find,agg1,agg2,num1_store,num2_store) )!= NULL){
                                         group->a = find;
+
                                         
                                     }
                                 } else {
@@ -1035,16 +1068,20 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                     
                                     if ((group = lookup(find,agg1,agg2,num1_store,num2_store) )!= NULL){
                                         group->a = find;
+                                         
                                         
                                     }
                                 }
-                                for (i = 1; i <= num2; i++) {
+                                
+                                for (i = 1; i <= num1_store; i++) {
                                     if (agg1[1].op != 3) {
                                         group->res[i] = aggregation_op(group->res[i] , intarry1[head1.index[printbit1[i]]], agg1[i].op);
                                     } else {
                                         group->res[i] = aggregation_op(group->res[i] , intarry2[head2.index[printbit1[i]]], 1);
                                         group->res2[i] = aggregation_op(group->res2[i], intarry2[head2.index[printbit1[i]]], 2);
                                     }
+                                }
+                                for (i = 1; i <= num2_store; i++) {
                                     if (agg2[i].op != 3){
                                         group->res1[i] = aggregation_op(group->res1[i] , intarry2[head2.index[printbit2[i]]], agg2[i].op);
                                     } else {
@@ -1053,8 +1090,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                     }
                                     
                                 }
-                                
-                                flag = 0;
+                               
                             }
                             other_p += varoffset2[head2.col_num - head2.intnum];
                             other_index += varoffset2[head2.col_num - head2.intnum];
@@ -1070,7 +1106,12 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
     }
     
     /******* print head ******/
-    if (!no_group )printf("%s",groupcol);
+    if (!no_group ){
+        if (groupcol2[0]==0)
+            printf("%s",groupcol1);
+        else
+            printf("%s",groupcol2);
+    }
     
     char temp_buff[MAX_TABLE_NAME_LEN*num];
     for (i = 1; i <= num1_store; i++) {
