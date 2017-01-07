@@ -20,6 +20,7 @@
 
 
 int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *selectcol, int op, int_or_char constant){
+printf("num:%d\n",num);
     char name[128];
     int printbit[num+2];
     int no_group = (groupcol[0] == '\0');
@@ -93,16 +94,17 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
     
     /****** print title ******/
     if (!no_group) printf("%s",groupcol);
+    if (num){
     char temp_buff[MAX_TABLE_NAME_LEN*num];
     for (i = 1; i <= num; i++) {
         sprintf(temp_buff, "|");
         sprintf(temp_buff+1, agg_op[agg[i].op]);
         sprintf(temp_buff+1+strlen(agg_op[agg[i].op]), "(%s)",agg[i].col_name);
     }
-    printf("%s\n",temp_buff);
+    printf("%s",temp_buff);
     
-    
-    
+    }
+    printf("\n");
     /****** group by ********/
     
     /********* empty hash table ***********/
@@ -150,13 +152,14 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
             } else flag = 1;
             if (flag) {
                 if (!no_group) {
+                
                     find.is_int = type;
                     if (type)
                         find.i = intarry[head.index[printbit[0]]];
                     else {
                         memcpy(find.varchar,varchararry+varoffset[head.index[printbit[0]]]-varoffset[0],varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]);
                         //  printf("%d\n",varoffset[head.index[printbit[0]]+1]);
-                        //  printf("%d\n",varoffset[head.index[printbit[0]]]);
+                         
                         if (varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]) find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
                     }
                     if ((group = lookup(find,agg,agg,num,0) )!= NULL){
@@ -198,10 +201,11 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
             } else {
                 printf("%s",(q->a).varchar);
             }
-            if (!no_group) {
+            if (!no_group&&num!=0) {
                 printf("|");
             }
             i = 1;
+            if(num!=0){
             if (agg[i].op != 3) {
                 printf("%d",q->res[i]);
             } else {
@@ -213,6 +217,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
                 } else {
                     printf("|%d",q->res[i]/q->res2[i]);
                 }
+            }
             }
             printf("\n");
             q = q->next;
@@ -249,7 +254,6 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
  int amb3_2*/
 
 int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *table2,char *groupcol2,aggregation *agg2, int num2, aggregation *unknown,int num, char *selectcol1, int amb1, int op1,  int_or_char constant1, char *selectcol2, int amb2, int op2, int_or_char constant2,  char *selectcol3_1, int amb3_1, int op3, char *selectcol3_2, int amb3_2){
-printf("-------------------------------------------------\n");
     char name1[128];
     char name2[128];
     char agg_op[6][6] = {"","sum","count","avg","min","max"};
@@ -1147,7 +1151,7 @@ printf("-------------------------------------------------\n");
         else
             printf("%s",groupcol2);
     }
-    
+    if (num1_store+num2_store!=0){
     char temp_buff[MAX_TABLE_NAME_LEN*num];
     for (i = 1; i <= num1_store; i++) {
         sprintf(temp_buff, "|");
@@ -1161,7 +1165,8 @@ printf("-------------------------------------------------\n");
         sprintf(temp_buff+1+strlen(agg_op[agg2[i].op]), "(%s)",agg2[i].col_name);
     }
     if (num2_store) printf("%s",temp_buff);
-    printf("\n",temp_buff);
+    }
+    printf("\n");
     /******* print data ******/
     for (j = 0; j < HASHSIZE; j++) {
         nlist *q = hashtab[j];
@@ -1171,10 +1176,11 @@ printf("-------------------------------------------------\n");
             } else {
                 printf("%s",(q->a).varchar);
             }
-            if (!no_group) {
+            if (!no_group&&num1_store+num2_store!=0) {
                 printf("|");
             }
             i = 1;
+            if(num1_store+num2_store!=0){
             if (num1_store) {
                 if (agg1[i].op != 3) {
                     printf("%d",q->res[i]);
@@ -1208,6 +1214,7 @@ printf("-------------------------------------------------\n");
                         printf("|%d",q->res1[i]/q->res12[i]);
                     }
                 }
+            }
             }
             printf("\n");
             q = q->next;

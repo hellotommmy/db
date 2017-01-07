@@ -12,7 +12,6 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     //列名s，列名数量，表名，需要选择的列 操作种类（编号按ppt），常量 （注：如果是select * 情况，则num=0，没有where的情况，op=0）
     //投影
     char name[128];
-    int printbit[num+2];
     sprintf(name, "./db/%s.tbl",table);
     if (access(name, 0) == -1){
         printf("Table %s doesn’t exist\n",table);
@@ -23,15 +22,19 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
     table_head head;
     
     fread(&head, sizeof(table_head), 1, fp);
-    
+    int printbit[head.col_num];
     int i,j = -1;
     int star = (num == 0);
     /***** judge ****/
+  
     if (star) {
         num = head.col_num;
+
         for (i = 1; i <= head.col_num; i++) {
+
             printbit[i] = i - 1;
         }
+
     } else {
         for (j = 1; j <= num; j++) {
             for (i = 0; i < head.col_num; i++) {
@@ -48,12 +51,14 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
         }
     }
     
-    
-    
+   
+     
     if (op != 0) {
+    
         for (i = 0; i < head.col_num; i++) {
             if (strcmp(selectcol, head.col_name[i]) == 0){
                 printbit[num + 1] = i;
+                
                 if (  (head.col_type[i/32] & (1 << (i%32) ) ) ^ (constant.is_int << i%32)){
                     if (constant.is_int) printf("Predicate %d error\n",constant.i);
                     else printf("Predicate %s error\n",constant.varchar);
@@ -69,8 +74,8 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
             return -1;
         }
     }
-    
     /****** print ******/
+   
     if (star) {
         printf("%s",head.col_name[0]);
         for (i = 1; i < head.col_num; i++) {
@@ -134,8 +139,6 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     char name1[128];
     char name2[128];
     int num1_store,num2_store;
-    int printbit1[num1+1+num];
-    int printbit2[num2+1+num];
     sprintf(name1, "./db/%s.tbl",table1);
     sprintf(name2, "./db/%s.tbl",table2);
     if (access(name1, 0) == -1){
@@ -153,6 +156,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     table_head head1, head2;
     fread(&head1, sizeof(table_head), 1, fp1);
     fread(&head2, sizeof(table_head), 1, fp2);
+    int printbit1[head1.col_num];
+    int printbit2[head2.col_num];
     int i,j = -1;
     int star = (num1 == 0 && num2 == 0);
     /******** judge cols in table1 *********/
@@ -714,7 +719,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                         if (num2_store){
                                             char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
                                             memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
-                                            temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
+                                            if(varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]) temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
                                             printf("%s",temp);
                                         }
                                     }
