@@ -621,21 +621,34 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
             int index = sizeof(int);
             char *p = buff;
             p += sizeof(int);
+            //MODIFIED
+            int varoffset2[head2.col_num - head2.intnum+1];
+            int intarry2[head2.intnum];
+            char varchararry2[(head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1];
+            //MODIFY_END
             while (index < *(int *)buff) {
                 
                 /****读出一个tuple的数据*****/
-                int varoffset2[head2.col_num - head2.intnum+1];
-                int intarry2[head2.intnum];
+                //MODIFIED
+                //int varoffset2[head2.col_num - head2.intnum+1];
+                //int intarry2[head2.intnum];
+                //MODIFY_END
                 memcpy(varoffset2, p, (head2.col_num - head2.intnum+1)*sizeof(int));
                 memcpy(intarry2, p+(head2.col_num - head2.intnum+1)*sizeof(int), head2.intnum*sizeof(int));
-                char varchararry2[(head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1];
+                //MODIFIED
+                //char varchararry2[(head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1];
+                //MODIFY_END
                 int i;
-                for (i = 0; i < (head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry2[i]=0;
+                //MODIFIED
+                //for (i = 0; i < (head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry2[i]=0;
+                memset(varchararry2,0, (head2.col_num - head2.intnum)*MAX_VARCHAR_LEN+1);
+                //MODIFY_END
                 memcpy(varchararry2, p+(head2.col_num+1)*sizeof(int), (varoffset2[head2.col_num - head2.intnum]+1)*sizeof(char));
                 
                 /***** 从另一个table中读出一个数据 ***********/
                 char temp2[varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store]]]+1];
-                
+                //memset(temp2,0,(varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store]]]+1));
+                //printf("%s\n",temp2 );
                 int flag = 0; //flag == 1 满足条件
                 
                 if (op2) {
