@@ -118,6 +118,8 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 				return ERROR;
 			i++;
 			small_flag=1;
+			if(s[i+1]!='=')
+				goto outside_while;
 			break;
 			case '=':
 			equal_flag=1;
@@ -127,10 +129,13 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 			goto outside_while;
 			break;
 			case '>':
-			if(small_flag||big_flag||equal_flag)
+			if(small_flag||big_flag||equal_flag){
 				return ERROR;
+			}
 			i++;
 			big_flag=1;
+			if(s[i+1]!='=')
+				goto outside_while;
 			break;
 			case 'l':
 			if(s[i+1]=='i'&&s[i+2]=='k'&&s[i+3]=='e'&&s[i+4]==' ')
@@ -768,10 +773,13 @@ int group_check(char *s ,arg_struct *O,int mode){
 	}
 	else if(mode==1){
 		//default 1 table
+//		printf("1\n");
 		bool_t dot_flag=FALSE;
 		if(O->which_group==0){
+//			printf("2\n");
 			if(O->agg_number[0]==0&&O->agg_number[1]==0&&O->agg_number[2]==0&&(O->num_cols[0]+O->num_cols[1]+O->num_cols[2]  == 1)){
 				//1 group col but no agg
+//				printf("3\n");
 				i=0;
 				if(O->num_cols[0]){
 					while(s[i]!=0){
@@ -793,14 +801,17 @@ int group_check(char *s ,arg_struct *O,int mode){
 					//TODO
 					if(strcmp(s,O->cols[0][1])==0)
 					{
+	//					printf("4\n");
 						strcpy(O->agg[0][0].col_name,s);
 						O->num_cols[0] = 0;
 						memset(O->cols[0][1],0,sizeof(char)*MAX_TABLE_NAME_LEN);
 						O->which_group=1;
 						return OK;
 					}
-					else
+					else{
+	//					printf("4\n");
 						return ERROR;
+					}
 				}
 				else if(O->num_cols[1]){
 					while(s[i]!=0){
@@ -1558,6 +1569,8 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	int i,j;
 	memset(O,0,sizeof(arg_struct));
 	table_number = how_many_tb(middle_buffer[1],O);
+	if(table_number==2&&sign_flag[2]==0)
+		return ERROR;
 	O->table_number=table_number;
 	if(table_number==ERROR){
 		printf("table number error\n");
@@ -1580,7 +1593,6 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	if(sign_flag[5]==1){
 		group_by_res=group_check(middle_buffer[5],O,table_number);
 		if(group_by_res==ERROR){
-			printf("3\n");
 			return ERROR;
 		}
 	}
