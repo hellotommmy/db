@@ -1427,6 +1427,12 @@ int extract_col1(arg_struct * O,char *s){
 	while(s[i]!=' '&&s[i]!=')'){
 		if(s[i]==0)
 			return ERROR;
+		if(!myisalpha(s[i])){
+			if(s[i]!='*')
+				return ERROR;
+			if(O->agg[0][O->agg_number[0]].op!=2)//not count
+				return ERROR;
+		}
 		O->agg[0][O->agg_number[0]].col_name[j++]=s[i++];	
 	}
 	O->agg[0][O->agg_number[0]].col_name[j] = 0;
