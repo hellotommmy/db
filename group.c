@@ -249,6 +249,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
  int amb3_2*/
 
 int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *table2,char *groupcol2,aggregation *agg2, int num2, aggregation *unknown,int num, char *selectcol1, int amb1, int op1,  int_or_char constant1, char *selectcol2, int amb2, int op2, int_or_char constant2,  char *selectcol3_1, int amb3_1, int op3, char *selectcol3_2, int amb3_2){
+printf("-------------------------------------------------\n");
     char name1[128];
     char name2[128];
     char agg_op[6][6] = {"","sum","count","avg","min","max"};
@@ -412,9 +413,10 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         
         for (t = 1; t <= num; t++) {
             for (i = 0; i < head1.col_num; i++) {
-                if (strcmp(head1.col_name[i], unknown[t].col_name) == 0) {
+                if (strcmp(head1.col_name[i], unknown[t].col_name) == 0||unknown[t].op==2&&strcmp(unknown[t].col_name,"*")==0) {
+               // printf("*******************************************%s\n",unknown[t].col_name);
                     for (j = 0; j < head2.col_num; j++) {
-                        if (strcmp(head2.col_name[j], unknown[t].col_name)==0) {
+                        if (unknown[t].op!=2&&strcmp(head2.col_name[j], unknown[t].col_name)==0) {
                             printf("Ambiguous column %s\n",unknown[t].col_name);
                             fclose(fp1);
                             fclose(fp2);
@@ -505,6 +507,11 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
      //   head = head2;
     }
     
+    
+    int op_temp1=0;
+    int op_temp2=0;
+    int_or_char temp1;
+    int_or_char temp2;
     /******* judge selectcol1 in table1 *********/
     if (op1 != 0) {
         if (!amb1) {
@@ -518,6 +525,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         fclose(fp2);
                         return -1;
                     }
+                    op_temp1 = op1;
+                    temp1 = constant1;
                     num1++;
                     break;
                 }
@@ -548,6 +557,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         fclose(fp2);
                         return -1;
                     }
+                    temp1 = constant1;
+                    op_temp1 = op1;
                     num1++;
                     break;
                 }
@@ -567,6 +578,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                             fclose(fp2);
                             return -1;
                         }
+                        temp2 = constant1;
+                        op_temp2 = op1;
                         num2++;
                         break;
                     }
@@ -583,7 +596,9 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         
     }
     /******* judge selectcol2 in table2 *********/
+
     if (op2 != 0) {
+    
         if (!amb2) {
             for (i = 0; i < head2.col_num; i++) {
                 if (strcmp(selectcol2, head2.col_name[i]) == 0){
@@ -595,6 +610,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         fclose(fp1);
                         return -1;
                     }
+                    temp2 = constant2;
+                    op_temp2 = op2;
                     num2++;
                     break;
                 }
@@ -625,6 +642,8 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         fclose(fp1);
                         return -1;
                     }
+                    temp2 = constant2;
+                    op_temp2 = op2;
                     num2++;
                     break;
                 }
@@ -638,13 +657,14 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                     if (strcmp(head1.col_name[j], selectcol2) == 0) {
                         printbit1[num1 + 1] = j;
                         if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
-                            //           printf("********************************\n");
                             if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
                             else printf("Predicate %s error\n",constant2.varchar);
                             fclose(fp2);
                             fclose(fp1);
                             return -1;
                         }
+                        temp1 = constant2;
+                        op_temp1 = op2;
                         num1++;
                         break;
                     }
@@ -660,6 +680,10 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         }
         
     }
+    op1 = op_temp1;
+    op2 = op_temp2;
+    constant1 = temp1;
+    constant2 = temp2;
     
     /******* judge selectcol3_1 in table1 *********/
     if (op3 != 0) {
@@ -825,13 +849,16 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
         buffnum = writetobuff(table_buff, head1, fp1, constant1, printbit1, num1_store, op1);
         int pagenum = head2.datapage;
         zero(buff);
+        
         while (pagenum <= head2.freepage) {
+        
             fseek(fp2, pagenum*PAGE_LEN, SEEK_SET);
             zero(buff);
             fread(buff,sizeof(char), PAGE_LEN,fp2);
             int index = sizeof(int);
             char *p = buff;
             p += sizeof(int);
+            
             while (index < *(int *)buff) {
                 
                 /****读出一个tuple的数据*****/
@@ -847,6 +874,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                 int flag = 0; //flag == 1 满足条件
                 
                 if (op2) {
+                
                     if (constant2.is_int) {//int
                         if (int_op(intarry2[head2.index[printbit2[num2_store + 1]]],constant2.i,op2)) flag += 1;
                     } else {//varchar
@@ -855,7 +883,6 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         if (var_op(temp2,constant2.varchar,op2)) flag += 1;
                     }
                 } else flag++;
-                
                 if (flag) {
                     flag = 0;
                     int other_pagenum = 0;
@@ -888,15 +915,17 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                 if (var_op(temp1,temp2,7)) flag += 1;
                                 // printf("flag: %d\n",flag);
                             }
+                            
                             if (flag) {
-                                
+                                flag = 0;
                                 if (!no_group) {
                                     find.is_int = type;
                                     if (type){
+                                    
                                         if (groupcol2[0]==0)
                                             find.i = intarry1[head1.index[printbit1[0]]];
                                         else find.i = intarry2[head2.index[printbit2[0]]];
-                                        
+                                      
                                     }
                                     else {
                                         if (groupcol2[0]==0) {
@@ -912,11 +941,13 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                         }
                                         
                                     }
-                                    
+                              
+                            
                                     if ((group = lookup(find,agg1,agg2,num1_store,num2_store) )!= NULL){
                                         group->a = find;
-                                        
+                                       
                                     }
+                           
                                 } else {
                                     find.is_int = 0;
                                     find.varchar[0] = '\0';
@@ -926,16 +957,20 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                         
                                         
                                     }
+                                    
                                 }
-                                
+                             
                                 for (i = 1; i <= num1_store; i++) {
                                     if (agg1[1].op != 3) {
+                                    
                                         group->res[i] = aggregation_op(group->res[i] , intarry1[head1.index[printbit1[i]]], agg1[i].op);
+                                        
                                     } else {
                                         group->res[i] = aggregation_op(group->res[i] , intarry2[head2.index[printbit1[i]]], 1);
                                         group->res2[i] = aggregation_op(group->res2[i], intarry2[head2.index[printbit1[i]]], 2);
                                     }
                                 }
+                                
                                 for (i = 1; i <= num2_store; i++) {
                                     if (agg2[i].op != 3){
                                         group->res1[i] = aggregation_op(group->res1[i] , intarry2[head2.index[printbit2[i]]], agg2[i].op);
@@ -946,7 +981,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                     
                                 }
                                 
-                                flag = 0;
+                                
                             }
                             other_p += varoffset1[head1.col_num - head1.intnum];
                             other_index += varoffset1[head1.col_num - head1.intnum];
@@ -954,12 +989,12 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         other_pagenum++;
                     }
                 }
+                
                 p += varoffset2[head2.col_num - head2.intnum];
                 index += varoffset2[head2.col_num - head2.intnum];
             }
             pagenum++;
         }
-        
     }else {
     
         int buffnum;

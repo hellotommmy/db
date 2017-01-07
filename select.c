@@ -251,7 +251,11 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     num1_store = num1;
     num2_store = num2;
     int type1=0,type2=0;
-     /******* judge selectcol1 in table1 *********/
+    int op_temp1=0;
+    int op_temp2=0;
+    int_or_char temp1;
+    int_or_char temp2;
+    /******* judge selectcol1 in table1 *********/
     if (op1 != 0) {
         if (!amb1) {
             for (i = 0; i < head1.col_num; i++) {
@@ -264,6 +268,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                         fclose(fp2);
                         return -1;
                     }
+                    op_temp1 = op1;
+                    temp1 = constant1;
                     num1++;
                     break;
                 }
@@ -294,6 +300,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                         fclose(fp2);
                         return -1;
                     }
+                    temp1 = constant1;
+                    op_temp1 = op1;
                     num1++;
                     break;
                 }
@@ -313,6 +321,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                             fclose(fp2);
                             return -1;
                         }
+                        temp2 = constant1;
+                        op_temp2 = op1;
                         num2++;
                         break;
                     }
@@ -329,7 +339,9 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
         
     }
     /******* judge selectcol2 in table2 *********/
+
     if (op2 != 0) {
+    
         if (!amb2) {
             for (i = 0; i < head2.col_num; i++) {
                 if (strcmp(selectcol2, head2.col_name[i]) == 0){
@@ -341,6 +353,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                         fclose(fp1);
                         return -1;
                     }
+                    temp2 = constant2;
+                    op_temp2 = op2;
                     num2++;
                     break;
                 }
@@ -371,6 +385,8 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                         fclose(fp1);
                         return -1;
                     }
+                    temp2 = constant2;
+                    op_temp2 = op2;
                     num2++;
                     break;
                 }
@@ -384,13 +400,14 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                     if (strcmp(head1.col_name[j], selectcol2) == 0) {
                         printbit1[num1 + 1] = j;
                         if (  (head1.col_type[j/31] & (1 << (j%32) ) ) ^ (constant2.is_int << j%32)){
-                 //           printf("********************************\n");
                             if (constant2.is_int) printf("Predicate %d error\n",constant2.i);
                             else printf("Predicate %s error\n",constant2.varchar);
                             fclose(fp2);
                             fclose(fp1);
                             return -1;
                         }
+                        temp1 = constant2;
+                        op_temp1 = op2;
                         num1++;
                         break;
                     }
@@ -406,6 +423,10 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
         }
         
     }
+    op1 = op_temp1;
+    op2 = op_temp2;
+    constant1 = temp1;
+    constant2 = temp2;
     
     /******* judge selectcol3_1 in table1 *********/
     if (op3 != 0) {
