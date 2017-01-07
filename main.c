@@ -253,7 +253,6 @@ void do_operation(){
 	arg_struct O;
 	int i;
 //	int k;
-	printf("%s\n",command_buffer );
 	switch(which_type){
 	case 1:  
 		parse_create(command_buffer,&error_flag);
@@ -273,31 +272,31 @@ void do_operation(){
 		else if(error_flag==2)
 			printf("Can’t create table\n");
 		else{
-			printf("Syntax error1\n");
+			printf("Syntax error\n");
 			}
 		break;
 	case 2:
 		if(parse_drop(command_buffer,col_name[0])==OK)
 			drop(col_name[0]);
 		else
-			printf("Syntax error2\n");
+			printf("Syntax error\n");
 		break;
 	case 3:
 	//printf("%s\n",command_buffer );
-	
 		cols = parse_insert(command_buffer,inchar,table_name);
 		//printf("cols:%d\n",cols );
 		if(cols==ERROR){
 			//printf("Syntax error1\n");
-			printf("in insert error:%d\n",number_of_lines);
+			printf("Syntax error:%d\n",number_of_lines);
 		}
-		else
+		else{
 			insert(table_name,cols,&(inchar[1]));
+		}
 		break;
 	case 4:
 	check_format = parse_select(&O,command_buffer,middle_buffer,sign_flag);
 	if(check_format==ERROR){
-		printf("Syntax error1\n");
+		printf("Syntax error\n");
 		break;
 		}
 	if(O.table_number==1){
@@ -400,7 +399,6 @@ void do_operation(){
 		}
 		else{
 		//no aggs
-		printf("1\n");
 			if(O.filter[0][0]!=0&&O.filter[1][0]!=0)
 				check_format=select_join(
 				O.cols[0],
@@ -467,7 +465,6 @@ void do_operation(){
 				1,O.join[1],O.amb_join);//1 means "="
 
 			else{
-				printf("2\n");
 				check_format=select_join(
 				O.cols[0],
 				O.num_cols[0],

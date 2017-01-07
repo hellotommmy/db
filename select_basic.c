@@ -1554,8 +1554,8 @@ int main(int argc, char const *argv[])
 int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_flag[6]){
 		int how_many;
 		if(format_check(s,middle_buffer,sign_flag)!=ERROR){
-		printf("---------------------------one select-----------------------\n");	
-			printf("middle_buffers:|%s|%s|%s|%s|%s|%s|\n", middle_buffer[0],middle_buffer[1],middle_buffer[2],middle_buffer[3],middle_buffer[4],middle_buffer[5]);
+//		printf("---------------------------one select-----------------------\n");	
+//			printf("middle_buffers:|%s|%s|%s|%s|%s|%s|\n", middle_buffer[0],middle_buffer[1],middle_buffer[2],middle_buffer[3],middle_buffer[4],middle_buffer[5]);
 			if((how_many=parse_select_begin(middle_buffer,sign_flag,O))!=ERROR)
 			{
 				return OK;
@@ -1620,7 +1620,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 		if(filter_res==ERROR)
 			return ERROR;
 	}		
-	printf("current info:\n");
+/*	printf("current info:\n");
 	printf("%d tables:\t",O->table_number );
 	for(i=0;i<2;i++){
 		if(table_number-1>=i)
@@ -1712,7 +1712,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	}
 	printf("\n---------------parser info end--------------\n");			
 
-
+*/
 	if(sign_flag[5]==0&&table_number==1)
 		return 1;
 	if(sign_flag[5]==0&&table_number==2)
