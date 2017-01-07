@@ -301,7 +301,7 @@ void do_operation(){
 		break;
 		}
 	if(O.table_number==1){
-		if(O.agg_number[0]!=0||O.agg_number[1]!=0||O.agg_number[2]!=0){
+		if(O.agg_number[0]!=0||O.agg_number[1]!=0||O.agg_number[2]!=0||O.which_group!=0){
 			//1 table yes agg
 			
 				check_format=
@@ -399,6 +399,8 @@ void do_operation(){
 				
 		}
 		else{
+		//no aggs
+		printf("1\n");
 			if(O.filter[0][0]!=0&&O.filter[1][0]!=0)
 				check_format=select_join(
 				O.cols[0],
@@ -464,7 +466,8 @@ void do_operation(){
 				O.join[0],O.amb_join,
 				1,O.join[1],O.amb_join);//1 means "="
 
-			else
+			else{
+				printf("2\n");
 				check_format=select_join(
 				O.cols[0],
 				O.num_cols[0],
@@ -485,6 +488,7 @@ void do_operation(){
 
 				O.join[0],O.amb_join,
 				1,O.join[1],O.amb_join);//1 means "="
+			}
 
 		
 		}
