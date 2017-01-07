@@ -244,6 +244,7 @@ void extract_col(){
 int number_of_lines;
 void do_operation(){
 	//have a line of operation, decide what to do
+//	printf("%s\n",command_buffer );
 	char table_name[MAX_TABLE_NAME_LEN];
 	int_or_char inchar[MAX_ITEMS_IN_TABLE];
 	int cols;
@@ -548,7 +549,7 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 					state_reg = 0;
 				//	printf("in varchar?:%d\n",in_varchar );
 				//	printf("%d\n",number_of_lines );
-					printf("Syntax error4,char = %c\n",which_command);
+					printf("Syntax error%c\n");
 					fgets(waste,1000,ptr);
 			}
 			break;
@@ -557,7 +558,7 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 				state_reg = 5;
 			else{
 				state_reg = 0 ;
-				printf("Syntax error5\n");
+				printf("Syntax error\n");
 				fgets(waste,1000,ptr);
 				}
 			break;
@@ -588,7 +589,7 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 				}
 			}
 			else if(which_command==0){
-				printf("Syntax error6\n");
+				printf("Syntax error\n");
 				state_reg = 2;
 				clear_buffer();
 			}
@@ -601,7 +602,7 @@ int read_sql_file_line(FILE * ptr){//read one line in a .sql file
 				state_reg = 5;
 			break;
 		default:
-			printf("unknown error\n");
+			printf("Syntax error\n");
 		}
 	}
 	return 0;

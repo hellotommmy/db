@@ -106,7 +106,7 @@ int parse_insert(char *s,int_or_char t[MAX_ITEMS_IN_TABLE],char table_name[MAX_T
 		buffer[i] = 0;
 	}
 	if(extract_items_between_brackets_i(s,buffer)==ERROR){
-		printf("666\n");
+	//	printf("666\n");
 		return ERROR;
 	}
 	int pieces;
@@ -272,7 +272,7 @@ int cut_into_pieces(char *s, int_or_char t[MAX_ITEMS_IN_TABLE+1]){
 			break;
 
 			default:
-			printf("error!!!!!\n");
+			return ERROR;
 		}
 	}
 	return ERROR;
