@@ -59,8 +59,9 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 			col[j]=0;
 			break;
 		}
-		if(!(myisalpha1(s[i])))
+		if(!(myisalpha1(s[i]))){
 			return ERROR;
+		}
 		col[j++]=s[i++];
 	}
 	while(s[i]==' ')
@@ -71,15 +72,17 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 		i++;
 		while(s[i]==' ')
 			i++;
-	}	
+	}
 	int which_table[2]={0};
 	if(0!=dot_flag[0]){
 		which_table[0]=(strcmp(table1,col)==0);
 		which_table[1]=(strcmp(table2,col)==0);
-		if(which_table[0]==0&&which_table[1]==0)
+		if(which_table[0]==0&&which_table[1]==0){
 			return ERROR;
-		if(!myisalpha1(s[i]))
+		}
+		if(!myisalpha1(s[i])){
 			return ERROR;
+		}
 		j=0;
 		while(s[i]!=' '&&s[i]!='<'&&s[i]!='='&&s[i]!='>'){
 			if(myisalpha1(s[i])==0)
@@ -105,6 +108,7 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 	int not_equal_flag=0;
 	while(s[i]==' ')
 		i++;
+	printf("s[i]:%c\n",s[i] );
 	while(s[i]!=' '){
 		switch(s[i]){
 			case '!':
@@ -116,10 +120,12 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 			case '<':
 			if(small_flag||big_flag||equal_flag)
 				return ERROR;
-			i++;
 			small_flag=1;
-			if(s[i+1]!='=')
+			if(s[i+1]!='='){
+				i++;
 				goto outside_while;
+			}
+			i++;
 			break;
 			case '=':
 			equal_flag=1;
@@ -132,10 +138,12 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 			if(small_flag||big_flag||equal_flag){
 				return ERROR;
 			}
-			i++;
 			big_flag=1;
-			if(s[i+1]!='=')
+			if(s[i+1]!='='){
+				i++;
 				goto outside_while;
+			}
+			i++;
 			break;
 			case 'l':
 			if(s[i+1]=='i'&&s[i+2]=='k'&&s[i+3]=='e'&&s[i+4]==' ')
@@ -626,9 +634,11 @@ int filter(arg_struct *O,char *s,int mode){
 	char col_buff[MAX_TABLE_NAME_LEN];
 	char constant_buff[MAX_VARCHAR_LEN];
 	if(mode==2){
+		//printf("1\n");
 		status=cut(&amb_join,O->table[0],O->table[1],s,col_buff,&op,constant_buff);
 		if(status==ERROR)
 			return ERROR;
+		//printf("3\n");
 		if(status==4){
 			O->amb_join = amb_join;
 			strcpy(O->join[0],col_buff);
@@ -1554,8 +1564,8 @@ int main(int argc, char const *argv[])
 int parse_select(arg_struct *O,char *s,char middle_buffer[6][1000],char sign_flag[6]){
 		int how_many;
 		if(format_check(s,middle_buffer,sign_flag)!=ERROR){
-//		printf("---------------------------one select-----------------------\n");	
-//			printf("middle_buffers:|%s|%s|%s|%s|%s|%s|\n", middle_buffer[0],middle_buffer[1],middle_buffer[2],middle_buffer[3],middle_buffer[4],middle_buffer[5]);
+		printf("---------------------------one select-----------------------\n");	
+			printf("middle_buffers:|%s|%s|%s|%s|%s|%s|\n", middle_buffer[0],middle_buffer[1],middle_buffer[2],middle_buffer[3],middle_buffer[4],middle_buffer[5]);
 			if((how_many=parse_select_begin(middle_buffer,sign_flag,O))!=ERROR)
 			{
 				return OK;
@@ -1584,8 +1594,9 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	}
 	if(table_number==2){
 		ex_col_result=extract_col2(O,middle_buffer[0]);
-		if(ex_col_result==ERROR)
+		if(ex_col_result==ERROR){
 			return ERROR;
+		}
 	}
 	else{
 		ex_col_result = extract_col1(O,middle_buffer[0]);
@@ -1605,22 +1616,28 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	int filter_res;
 	if(sign_flag[2]){
 //		printf("have reached here\n");
+		printf("%s\n",middle_buffer[2] );
 		filter_res = filter(O,middle_buffer[2],table_number); 
 //		printf("***********************O->amb_join = %d\n",O->amb_join );
-		if(filter_res==ERROR)
+		if(filter_res==ERROR){
 			return ERROR;
+		}
 	}	
 	if(sign_flag[3]){
 		filter_res = filter(O,middle_buffer[3],table_number); 
-		if(filter_res==ERROR)
+		if(filter_res==ERROR){
+			printf("7\n");
 			return ERROR;
+		}
 	}
 	if(sign_flag[4]){
 		filter_res = filter(O,middle_buffer[4],table_number); 
-		if(filter_res==ERROR)
+		if(filter_res==ERROR){
+			printf("9\n");
 			return ERROR;
+		}
 	}		
-/*	printf("current info:\n");
+	printf("current info:\n");
 	printf("%d tables:\t",O->table_number );
 	for(i=0;i<2;i++){
 		if(table_number-1>=i)
@@ -1712,7 +1729,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	}
 	printf("\n---------------parser info end--------------\n");			
 
-*/
+
 	if(sign_flag[5]==0&&table_number==1)
 		return 1;
 	if(sign_flag[5]==0&&table_number==2)
