@@ -108,7 +108,6 @@ int cut(int *amb_join,char *table1,char *table2,char *s,char col[MAX_VARCHAR_LEN
 	int not_equal_flag=0;
 	while(s[i]==' ')
 		i++;
-	printf("s[i]:%c\n",s[i] );
 	while(s[i]!=' '){
 		switch(s[i]){
 			case '!':
@@ -728,14 +727,14 @@ int group_check(char *s ,arg_struct *O,int mode){
 			i++;
 		if(s[i]==','){
 		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
-			printf("col_name mismatch\n");
+//			printf("col_name mismatch\n");
 			return ERROR;
 		}
 			goto need_more_info;
 		}
 		if(s[i]==0){
 		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
-			printf("col_name mismatch\n");
+//			printf("col_name mismatch\n");
 			return ERROR;
 		}
 			goto need_more_info;
@@ -748,10 +747,9 @@ int group_check(char *s ,arg_struct *O,int mode){
 		while(s[i]!=' '&&s[i]!=0)
 			buffer[j++]=s[i++];
 		int result;
-		printf("buffer:%s\n",buffer );
 		result=which_table(O->table[0],O->table[1],buffer)+1;
 		if(strcmp(O->agg[O->which_group-1][0].col_name,buffer)!=0){
-			printf("col_name mismatch\n");
+//			printf("col_name mismatch\n");
 			return ERROR;
 		}
 		if(result==4||result==ERROR)
@@ -1228,7 +1226,7 @@ int extract_col1(arg_struct * O,char *s){
 		if(s[0]=='*'){
 			goto finish;
 		}
-		printf("unrecognized char\n");
+//		printf("unrecognized char\n");
 		return ERROR;
 	}
 	s1://read a new column
@@ -1589,7 +1587,7 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 		return ERROR;
 	O->table_number=table_number;
 	if(table_number==ERROR){
-		printf("table number error\n");
+//		printf("table number error\n");
 		return ERROR;
 	}
 	if(table_number==2){
@@ -1626,14 +1624,14 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	if(sign_flag[3]){
 		filter_res = filter(O,middle_buffer[3],table_number); 
 		if(filter_res==ERROR){
-			printf("7\n");
+//			printf("7\n");
 			return ERROR;
 		}
 	}
 	if(sign_flag[4]){
 		filter_res = filter(O,middle_buffer[4],table_number); 
 		if(filter_res==ERROR){
-			printf("9\n");
+//			printf("9\n");
 			return ERROR;
 		}
 	}		
@@ -1860,7 +1858,7 @@ int format_check(char *s,char middle_buffer[6][1000],char sign_flag[6]){
 					middle_buffer[0][j] = *(s+i);
 					if(*(s+i) == 0)//if it does not contain from
 					{
-					printf("does not contain from\n");
+//					printf("does not contain from\n");
 						return ERROR;
 					}
 				}
