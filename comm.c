@@ -219,6 +219,7 @@ int buff_write(char *buff, int *varoffset, int *intarry, char *varchararry, int 
     memcpy(buff + *(int *)buff + sizeof(int)*(col_num - intnum + 1), intarry, sizeof(int)*intnum);
     memcpy(buff + *(int *)buff + sizeof(int)*(col_num + 1), varchararry, strlen(varchararry)+1);
     *(int *)buff += varoffset[col_num - intnum];
+   // printf("%d\n",*(int *)buff);
     return 0;
 }
 
@@ -248,6 +249,7 @@ int writeonepage(int buffnum,char *table_buff, char *buff, table_head head, int 
             }
         }
         if (flag || op == 0) {
+        	
             while(buff_write(table_buff+buffnum*PAGE_LEN, varoffset, intarry, varchararry, head.col_num, head.intnum) == -1){
                 buffnum++;
                 buff_init(table_buff+buffnum*PAGE_LEN);
@@ -263,12 +265,13 @@ int writetobuff(char *table_buff, table_head head,FILE *fp, int_or_char constant
     int buffnum = 0;
     int pagenum = head.datapage;
     char buff[PAGE_LEN];
+    buff_init(table_buff);
     zero(buff);
     while (pagenum <= head.freepage) {
         fseek(fp, pagenum*PAGE_LEN, SEEK_SET);
         zero(buff);
         fread(buff,sizeof(char), PAGE_LEN,fp);
-        buff_init(table_buff);
+        
         
         buffnum = writeonepage(buffnum,table_buff, buff, head, printbit, num, constant, op);
         pagenum++;
