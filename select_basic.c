@@ -695,11 +695,11 @@ int filter(arg_struct *O,char *s,int mode){
 int group_check(char *s ,arg_struct *O,int mode){
 	//TODO:some bugs need to be fixed:allow only 1 group col
 	//should not expect ,
+	int i=0,j=0;
+	char buffer[MAX_TABLE_NAME_LEN];
 	if(mode==2){
 		if(O->which_group==0)
 			return ERROR;
-		int i=0,j=0;
-		char buffer[MAX_TABLE_NAME_LEN];
 		memset(buffer,0,MAX_TABLE_NAME_LEN);
 		while(s[i]==' ')
 			i++;
@@ -768,15 +768,110 @@ int group_check(char *s ,arg_struct *O,int mode){
 	}
 	else if(mode==1){
 		//default 1 table
-		if(O->which_group==0)
-			return ERROR;
+		bool_t dot_flag=FALSE;
+		if(O->which_group==0){
+			if(O->agg_number[0]==0&&O->agg_number[1]==0&&O->agg_number[2]==0&&(O->num_cols[0]+O->num_cols[1]+O->num_cols[2]  == 1)){
+				//1 group col but no agg
+				i=0;
+				if(O->num_cols[0]){
+					while(s[i]!=0){
+						if(s[i]=='.'){
+							dot_flag=TRUE;j=i+1;
+							while(s[j]==' ')
+								j++;
+							break;
+						}
+						i++;
+					}
+					if(dot_flag==TRUE){
+						i=0;
+						while(s[j]!=' '&&s[j]!=0){
+							s[i++]=s[j++];
+						}
+						s[i]=0;
+					}
+					//TODO
+					if(strcmp(s,O->cols[0][1])==0)
+					{
+						strcpy(O->agg[0][0].col_name,s);
+						O->num_cols[0] = 0;
+						memset(O->cols[0][1],0,sizeof(char)*MAX_TABLE_NAME_LEN);
+						O->which_group=1;
+						return OK;
+					}
+					else
+						return ERROR;
+				}
+				else if(O->num_cols[1]){
+					while(s[i]!=0){
+						if(s[i]=='.'){
+							dot_flag=TRUE;j=i+1;
+							while(s[j]==' ')
+								j++;
+							break;
+						}
+						i++;
+					}
+					if(dot_flag==TRUE){
+						i=0;
+						while(s[j]!=' '&&s[j]!=0){
+							s[i++]=s[j++];
+						}
+						s[i]=0;
+					}
+					//TODO
+					if(strcmp(s,O->cols[1][1])==0)
+					{
+						strcpy(O->agg[1][0].col_name,s);
+						O->num_cols[1] = 0;
+						memset(O->cols[1][1],0,sizeof(char)*MAX_TABLE_NAME_LEN);
+						O->which_group=2;
+						return OK;
+					}
+					else
+						return ERROR;
+				}
+				else{
+					while(s[i]!=0){
+						if(s[i]=='.'){
+							dot_flag=TRUE;j=i+1;
+							while(s[j]==' ')
+								j++;
+							break;
+						}
+						i++;
+					}
+					if(dot_flag==TRUE){
+						i=0;
+						while(s[j]!=' '&&s[j]!=0){
+							s[i++]=s[j++];
+						}
+						s[i]=0;
+					}
+					//TODO
+					if(strcmp(s,O->cols[2][1])==0)
+					{
+						strcpy(O->agg[2][0].col_name,s);
+						O->num_cols[2] = 0;
+						memset(O->cols[2][1],0,sizeof(char)*MAX_TABLE_NAME_LEN);
+						O->which_group=3;
+						return OK;
+					}
+					else
+						return ERROR;
+				}
+			}
+			else
+				return ERROR;
+		}
 		if(strcmp(O->agg[0][0].col_name,s)!=0)
 			return ERROR;
 		strcpy(O->agg[0][0].col_name,O->group_col);
 		return OK;
 	}
-	else
+	else{
 		return ERROR;
+	}
 }
 int which_table(char *table1,char *table2,char *query){
 	//return 0 if table1, 1 if table 2,2 if unknown
@@ -1475,16 +1570,19 @@ int parse_select_begin(char middle_buffer[6][1000],char sign_flag[6],arg_struct 
 	}
 	else{
 		ex_col_result = extract_col1(O,middle_buffer[0]);
-		if(ex_col_result==ERROR)
+		if(ex_col_result==ERROR){
 			return ERROR;
+		}
 		if(O->which_group==1)//to satisfy argument API
 			strcpy(O->agg[0][0].col_name,O->group_col);
 
 	}
 	if(sign_flag[5]==1){
 		group_by_res=group_check(middle_buffer[5],O,table_number);
-		if(group_by_res==ERROR)
+		if(group_by_res==ERROR){
+			printf("3\n");
 			return ERROR;
+		}
 	}
 	int filter_res;
 	if(sign_flag[2]){
