@@ -17,8 +17,9 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
     fp = fopen(name, "r+");
  //   printf("____________%s\n",name );
     table_head head;
-   // printf("*********insert%s\n",head.col_name[1] );
+    
     fread(&head, sizeof(table_head), 1, fp);
+    printf("*********insert:%s\n",head.col_name[0] );
     if (head.col_num != col) {
         printf("Wrong number of columns\n");  //列数不对
         return  -1;
@@ -35,20 +36,19 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
     int varoffset[col - head.intnum+1];
     int intarry[head.intnum];
     char varchararry[(col - head.intnum)*MAX_VARCHAR_LEN+1];
-    int i,it = 0,vt = 0;
+    int i,it = 0,vt = 1;
     for (i = 0; i < (col - head.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry[i]=0;
     int base = head.base;
     int j = -1;
+    varoffset[0] = base;
+
     for (i = 0; i < col; i++) {
         if (i%32 == 0) j++;
         if ((head.col_type[j] & (1<<i)) != 0 ) { //int type
             intarry[it] = inchar[i].i;
             it++;
         } else {
-            if (vt == 0) {
-                varoffset[0] = base;
-                vt++;
-            }
+            
             
             memcpy(varchararry+base-head.base, &(inchar[i].varchar),sizeof(char)*strlen(inchar[i].varchar));
             
@@ -59,8 +59,9 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
         }
     }
     
-    varchararry[varoffset[col - head.intnum]] = '\0';
-    varoffset[col - head.intnum] += 1;
+    if(col - head.intnum) {varchararry[varoffset[col - head.intnum]] = '\0';
+    	varoffset[col - head.intnum] += 1;
+	}
     if ((*(int *)buff + varoffset[col - head.intnum]) >= PAGE_LEN) {
         head.freepage += 1;
         fseek(fp, 0, SEEK_SET);
@@ -78,8 +79,6 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
     fwrite(varoffset, sizeof(int), col - head.intnum + 1, fp);
     fwrite(intarry, sizeof(int), head.intnum, fp);
     fwrite(varchararry, sizeof(char), strlen(varchararry)+1, fp);
-    
-    
     fclose(fp);
     return 0;
 }

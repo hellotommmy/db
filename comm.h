@@ -158,6 +158,7 @@ struct nlist *install(int_or_char a , aggregation *agg1,aggregation *agg2, int n
 int file_size(char* filename);
 void zero(char *buff);
 void settypebit(int col, int *col_type, table_head *head);
+
 void page_init(int pagenum, FILE *fp);
 bool_t comptypebit(int col, int_or_char *inchar,table_head head);
 void readbuff(char *buff, table_head head, int *printbit, int num, int_or_char constant, int op);
@@ -166,6 +167,5 @@ int var_op(char *a, char *b, int op);
 int agg_init (int op);
 int aggregation_op (int a, int b, int op);
 int buff_write(char *buff, int *varoffset, int *intarry, char *varchararry, int col_num, int intnum);
-void buff_init(char *buff);
 
 #endif

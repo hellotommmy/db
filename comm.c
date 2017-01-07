@@ -153,8 +153,8 @@ void readbuff(char *buff, table_head head, int *printbit, int num, int_or_char c
     int index = sizeof(int);
     char *p = buff;
     p += sizeof(int);
-    while (index < *(int *)buff) {
-        
+    
+    while (index < *(int *)buff) {    
         int varoffset[head.col_num - head.intnum+1];
         int intarry[head.intnum];
         /****读出一个tuple的数据*****/
@@ -165,16 +165,19 @@ void readbuff(char *buff, table_head head, int *printbit, int num, int_or_char c
         for (i = 0; i < (head.col_num - head.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry[i]=0;
         memcpy(varchararry, p+(head.col_num+1)*sizeof(int), (varoffset[head.col_num - head.intnum]+1)*sizeof(char));
         int flag = 0; //flag == 1 满足条件
+        
         if (op) {
             if (constant.is_int) {//int
+            
                 if (int_op(intarry[head.index[printbit[num + 1]]],constant.i,op)) flag = 1;
             } else {//varchar
                 char temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]+1];
                 memcpy(temp, varchararry+varoffset[head.index[printbit[num + 1]]]-varoffset[0], varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]);
-                temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
+                if(varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]) temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
                 if (var_op(temp,constant.varchar,op)) flag = 1;
             }
         }
+       // printf("common:\n%d %d\n",printbit[i],head.index[printbit[i]]);
         if (flag || op == 0) {
             i =1;
             //   printf("\n%d %d\n",printbit[i],head.index[printbit[i]]);
@@ -183,7 +186,7 @@ void readbuff(char *buff, table_head head, int *printbit, int num, int_or_char c
             } else {
                 char temp[varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]+1];
                 memcpy(temp, varchararry+varoffset[head.index[printbit[i]]]-varoffset[0], varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]);
-                temp[varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]]='\0';
+                if(varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]) temp[varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]]='\0';
                 printf("%s",temp);
             }
             int j = 0;
@@ -195,7 +198,7 @@ void readbuff(char *buff, table_head head, int *printbit, int num, int_or_char c
                 } else {
                     char temp[varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]+1];
                     memcpy(temp, varchararry+varoffset[head.index[printbit[i]]]-varoffset[0], varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]);
-                    temp[varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]]='\0';
+                    if(varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]) temp[varoffset[head.index[printbit[i]]+1]-varoffset[head.index[printbit[i]]]]='\0';
                     printf("|%s",temp);
                 }
             }
@@ -243,7 +246,7 @@ int writeonepage(int buffnum,char *table_buff, char *buff, table_head head, int 
             } else {//varchar
                 char temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]+1];
                 memcpy(temp, varchararry+varoffset[head.index[printbit[num + 1]]]-varoffset[0], varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]);
-                temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
+                if(varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]) temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
                 if (var_op(temp,constant.varchar,op)) flag = 1;
             }
         }
@@ -336,69 +339,5 @@ struct nlist *install(int_or_char a , aggregation*agg1,aggregation *agg2, int nu
     return np;
 }
 
-void init_buff(char *table_buff, int size){
-    int i;
-    for (i = 0; i < size; i++) {
-        table_buff[i] = 0;
-    }
-}
 
-int hashbuffwrite(char *buff, int *varoffset, int *intarry, char *varchararry, int col_num, int intnum){
-    memcpy(buff + *(int *)buff, varoffset, sizeof(int)*(col_num - intnum + 1));
-    memcpy(buff + *(int *)buff + sizeof(int)*(col_num - intnum + 1), intarry, sizeof(int)*intnum);
-    memcpy(buff + *(int *)buff + sizeof(int)*(col_num + 1), varchararry, strlen(varchararry)+1);
-    *(int *)buff += varoffset[col_num - intnum];
-    return 0;
-}
 
-int hashwriteonepage(int buffnum,char *table_buff, char *buff, table_head head, int *printbit, int num, int_or_char constant, int op){
-    int index = sizeof(int);
-    char *p = buff;
-    p += sizeof(int);
-    while (index < *(int *)buff) {
-        int varoffset[head.col_num - head.intnum+1];
-        int intarry[head.intnum];
-        /****读出一个tuple的数据*****/
-        memcpy(varoffset, p, (head.col_num - head.intnum+1)*sizeof(int));
-        memcpy(intarry, p+(head.col_num - head.intnum+1)*sizeof(int), head.intnum*sizeof(int));
-        char varchararry[(head.col_num - head.intnum)*MAX_VARCHAR_LEN+1];
-        int i;
-        for (i = 0; i < (head.col_num - head.intnum)*MAX_VARCHAR_LEN+1; i++) varchararry[i]=0;
-        memcpy(varchararry, p+(head.col_num+1)*sizeof(int), (varoffset[head.col_num - head.intnum]+1)*sizeof(char));
-        int flag = 0; //flag == 1 满足条件
-        if (op) {
-            if (constant.is_int) {//int
-                if (int_op(intarry[head.index[printbit[num + 1]]],constant.i,op)) flag = 1;
-            } else {//varchar
-                char temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]+1];
-                memcpy(temp, varchararry+varoffset[head.index[printbit[num + 1]]]-varoffset[0], varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]);
-                temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
-                if (var_op(temp,constant.varchar,op)) flag = 1;
-            }
-        }
-        if (flag || op == 0) {
-            while(buff_write(table_buff+buffnum*PAGE_LEN, varoffset, intarry, varchararry, head.col_num, head.intnum) == -1){
-                buffnum++;
-            }
-        }
-        p += varoffset[head.col_num - head.intnum];
-        index += varoffset[head.col_num - head.intnum];
-    }
-    return buffnum;
-}
-
-int hashwrite(char *table_buff, int size, table_head head,FILE *fp, int_or_char constant, int *printbit, int num, int op){
-    int buffnum = 0;
-    int pagenum = head.datapage;
-    char buff[PAGE_LEN];
-    zero(buff);
-    while (pagenum <= head.freepage) {
-        fseek(fp, pagenum*PAGE_LEN, SEEK_SET);
-        zero(buff);
-        fread(buff,sizeof(char), PAGE_LEN,fp);
-        init_buff(table_buff,size);
-        buffnum = writeonepage(buffnum,table_buff, buff, head, printbit, num, constant, op);
-        pagenum++;
-    }
-    return buffnum;
-}

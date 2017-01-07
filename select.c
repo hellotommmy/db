@@ -11,8 +11,6 @@
 int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, char *table, char *selectcol, int op, int_or_char constant){
     //列名s，列名数量，表名，需要选择的列 操作种类（编号按ppt），常量 （注：如果是select * 情况，则num=0，没有where的情况，op=0）
     //投影
-    printf("number:%d\n",num);
-    printf("operation:%d\n", op);
     char name[128];
     int printbit[num+2];
     sprintf(name, "./db/%s.tbl",table);
@@ -129,7 +127,6 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
  
 int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2){
-    printf("________________________________\n");
     printf("selectcol3_1:%s\n",selectcol3_1);
     printf("selectcol3_2:%s\n",selectcol3_2);
     printf("op1:%d,amb1 = %d, constant1 = %d\n", op1,amb1,constant1.i);
@@ -620,7 +617,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                         if (int_op(intarry2[head2.index[printbit2[num2_store + 1]]],constant2.i,op2)) flag += 1;
                     } else {//varchar
                         memcpy(temp2, varchararry2+varoffset2[head2.index[printbit2[num2_store + 1]]]-varoffset2[0], varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]);
-                        temp2[varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]]='\0';
+                        if(varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]) temp2[varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]]='\0';
                         if (var_op(temp2,constant2.varchar,op2)) flag += 1;
                     }
                 } else flag++;
@@ -652,7 +649,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                 if (int_op(intarry1[head1.index[printbit1[num1 + 1]]],intarry2[head2.index[printbit2[num2 + 1]]],5)) flag += 1;
                             } else {
                                 memcpy(temp1, varchararry1+varoffset1[head1.index[printbit1[num1 + 1]]]-varoffset2[0], varoffset1[head1.index[printbit1[num2 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]);
-                                temp1[varoffset1[head1.index[printbit1[num1 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]]='\0';
+                                if(varoffset1[head1.index[printbit1[num1 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]) temp1[varoffset1[head1.index[printbit1[num1 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]]='\0';
                                 // printf("temp1:%s %s\n",temp1,temp2);
                                 if (var_op(temp1,temp2,7)) flag += 1;
                                 // printf("flag: %d\n",flag);
@@ -668,7 +665,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                         if (num1_store) {
                                             char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
                                             memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
-                                            temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
+                                            if(varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]) temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
                                             printf("%s",temp);
                                         }
                                     }
@@ -682,7 +679,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                     } else {
                                         char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
                                         memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
-                                        temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
+                                        if (varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]) temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
                                         printf("|%s",temp);
                                     }
                                 }
@@ -710,7 +707,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                     } else {
                                         char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
                                         memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
-                                        temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
+                                        if(varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]) temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
                                         printf("|%s",temp);
                                     }
                                 }
@@ -755,7 +752,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                 /***** 从另一个table中读出一个数据 ***********/
                 char temp1[varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store]]]+1];
                 memcpy(temp1, varchararry1+varoffset1[head1.index[printbit1[num1_store + 1]]]-varoffset1[0], varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]);
-                temp1[varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]]='\0';
+                if(varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]) temp1[varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]]='\0';
                 int flag = 0; //flag == 1 满足条件
                 if (op1) {
                     if (constant1.is_int) {//int
@@ -793,7 +790,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                 if (int_op(intarry1[head1.index[printbit1[num1 + 1]]],intarry2[head2.index[printbit2[num2 + 1]]],5)) flag += 1;
                             } else {
                                 memcpy(temp2, varchararry2+varoffset2[head2.index[printbit2[num2 + 1]]]-varoffset1[0], varoffset2[head2.index[printbit2[num1 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]);
-                                temp2[varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]]='\0';
+                                if(varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]) temp2[varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]]='\0';
                                 // printf("temp2:%s %s\n",temp2,temp1);
                                 if (var_op(temp1,temp2,7)) flag += 1;
                                 // printf("flag: %d\n",flag);
@@ -808,7 +805,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                     } else {
                                         char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
                                         memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
-                                        temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
+                                        if (varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]) temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
                                         printf("%s",temp);
                                     }
                                 }
@@ -821,7 +818,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                     } else {
                                         char temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]+1];
                                         memcpy(temp, varchararry1+varoffset1[head1.index[printbit1[i]]]-varoffset1[0], varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]);
-                                        temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
+                                        if(varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]) temp[varoffset1[head1.index[printbit1[i]]+1]-varoffset1[head1.index[printbit1[i]]]]='\0';
                                         printf("|%s",temp);
                                     }
                                 }
@@ -835,7 +832,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                         if (num2_store) {
                                             char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
                                             memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
-                                            temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
+                                            if (varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]) temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
                                             printf("%s",temp);
                                         }
                                     }
@@ -849,7 +846,7 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
                                     } else {
                                         char temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]+1];
                                         memcpy(temp, varchararry2+varoffset2[head2.index[printbit2[i]]]-varoffset2[0], varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]);
-                                        temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
+                                        if(varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]) temp[varoffset2[head2.index[printbit2[i]]+1]-varoffset2[head2.index[printbit2[i]]]]='\0';
                                         printf("|%s",temp);
                                     }
                                 }
@@ -870,7 +867,6 @@ int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     }
     fclose(fp1);
     fclose(fp2);
-    printf("________________________________\n");
     return 0;
 }
 

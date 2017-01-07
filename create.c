@@ -17,7 +17,7 @@ int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABL
     head.col_num = col;
     settypebit(col, col_type, &head);
     head.base = (col+1)*sizeof(int);
-    head.datapage = (col<=ONE_PAGE_ITEM)?1:(col<=TWO_PAGE_ITEM)?2:(col<=THREE_PAGE_ITEM)?3:4;
+    head.datapage = 4;
     head.freepage = head.datapage;
     int i;
     for (i = 0; i < col; i++) {
@@ -26,7 +26,7 @@ int create(char *table_name, int col, char col_name[MAX_ITEMS_IN_TABLE][MAX_TABL
     FILE *fp;
     fp = fopen(name, "wb");
     int size = head.datapage*PAGE_LEN;
-    fwrite(&head, sizeof(char),size, fp);
+    fwrite(&head, sizeof(table_head),1, fp);
     page_init(head.freepage,fp);
     printf("Successfully created table %s!\n",table_name);
     fclose(fp);

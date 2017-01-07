@@ -143,7 +143,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
                 } else {//varchar
                     char temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]+1];
                     memcpy(temp, varchararry+varoffset[head.index[printbit[num + 1]]]-varoffset[0], varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]);
-                    temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
+                    if(varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]])temp[varoffset[head.index[printbit[num + 1]]+1]-varoffset[head.index[printbit[num + 1]]]]='\0';
                     if (var_op(temp,constant.varchar,op))
                         flag = 1;
                 }
@@ -157,7 +157,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
                         memcpy(find.varchar,varchararry+varoffset[head.index[printbit[0]]]-varoffset[0],varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]);
                         //  printf("%d\n",varoffset[head.index[printbit[0]]+1]);
                         //  printf("%d\n",varoffset[head.index[printbit[0]]]);
-                        find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
+                        if (varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]) find.varchar[varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]]='\0';
                     }
                     if ((group = lookup(find,agg,agg,num,0) )!= NULL){
                         group->a = find;
@@ -165,7 +165,7 @@ int group_simple(char *table, char *groupcol, aggregation *agg, int num, char *s
                     }
                 } else {
                     find.is_int = 0;
-                    find.varchar[0] = '\0';
+                    if (varoffset[head.index[printbit[0]]+1]-varoffset[head.index[printbit[0]]]) find.varchar[0] = '\0';
                     
                     if ((group = lookup(find,agg,agg,num,0) )!= NULL){
                         group->a = find;
@@ -851,7 +851,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                         if (int_op(intarry2[head2.index[printbit2[num2_store + 1]]],constant2.i,op2)) flag += 1;
                     } else {//varchar
                         memcpy(temp2, varchararry2+varoffset2[head2.index[printbit2[num2_store + 1]]]-varoffset2[0], varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]);
-                        temp2[varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]]='\0';
+                        if(varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]])temp2[varoffset2[head2.index[printbit2[num2_store + 1]]+1]-varoffset2[head2.index[printbit2[num2_store + 1]]]]='\0';
                         if (var_op(temp2,constant2.varchar,op2)) flag += 1;
                     }
                 } else flag++;
@@ -883,7 +883,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                 if (int_op(intarry1[head1.index[printbit1[num1 + 1]]],intarry2[head2.index[printbit2[num2 + 1]]],5)) flag += 1;
                             } else {
                                 memcpy(temp1, varchararry1+varoffset1[head1.index[printbit1[num1 + 1]]]-varoffset2[0], varoffset1[head1.index[printbit1[num2 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]);
-                                temp1[varoffset1[head1.index[printbit1[num1 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]]='\0';
+                                if(varoffset1[head1.index[printbit1[num1 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]) temp1[varoffset1[head1.index[printbit1[num1 + 1]]+1]-varoffset1[head1.index[printbit1[num1 + 1]]]]='\0';
                                 // printf("temp1:%s %s\n",temp1,temp2);
                                 if (var_op(temp1,temp2,7)) flag += 1;
                                 // printf("flag: %d\n",flag);
@@ -903,12 +903,12 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                         
                                             memcpy(find.varchar,varchararry1+varoffset1[head1.index[printbit1[0]]]-varoffset1[0],varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]);
                                             
-                                            find.varchar[varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]]='\0';
+                                            if(varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]])find.varchar[varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]]='\0';
                                         } else {
                                         
                                             memcpy(find.varchar,varchararry2+varoffset2[head2.index[printbit2[0]]]-varoffset2[0],varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]);
                                             
-                                            find.varchar[varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]]='\0';
+                                            if(varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]])find.varchar[varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]]='\0';
                                         }
                                         
                                     }
@@ -985,7 +985,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                 /***** 从另一个table中读出一个数据 ***********/
                 char temp1[varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store]]]+1];
                 memcpy(temp1, varchararry1+varoffset1[head1.index[printbit1[num1_store + 1]]]-varoffset1[0], varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]);
-                temp1[varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]]='\0';
+                if(varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]])temp1[varoffset1[head1.index[printbit1[num1_store + 1]]+1]-varoffset1[head1.index[printbit1[num1_store + 1]]]]='\0';
                 
                 
                 
@@ -1026,7 +1026,7 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                 
                             } else {
                                 memcpy(temp2, varchararry2+varoffset2[head2.index[printbit2[num2 + 1]]]-varoffset1[0], varoffset2[head2.index[printbit2[num1 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]);
-                                temp2[varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]]='\0';
+                                if(varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]])temp2[varoffset2[head2.index[printbit2[num2 + 1]]+1]-varoffset2[head2.index[printbit2[num2 + 1]]]]='\0';
                                 // printf("temp2:%s %s\n",temp2,temp1);
                                 if (var_op(temp1,temp2,7)) flag += 1;
                                 
@@ -1047,12 +1047,12 @@ int group_join(char *table1, char *groupcol1,aggregation *agg1, int num1, char *
                                         
                                             memcpy(find.varchar,varchararry1+varoffset1[head1.index[printbit1[0]]]-varoffset1[0],varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]);
                                             
-                                            find.varchar[varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]]='\0';
+                                            if(varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]])find.varchar[varoffset1[head1.index[printbit1[0]]+1]-varoffset1[head1.index[printbit1[0]]]]='\0';
                                         } else {
                                         
                                             memcpy(find.varchar,varchararry2+varoffset2[head2.index[printbit2[0]]]-varoffset2[0],varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]);
                                             
-                                            find.varchar[varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]]='\0';
+                                            if(varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]) find.varchar[varoffset2[head2.index[printbit2[0]]+1]-varoffset2[head2.index[printbit2[0]]]]='\0';
                                         }
                                         
                                     }
