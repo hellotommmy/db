@@ -132,7 +132,6 @@ int select_simple(char cols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN], int num, ch
  
 int select_join(char cols1[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],
     int num1,char *table1,char cols2[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num2,char *table2,char unknowncols[MAX_ITEMS_IN_TABLE][MAX_TABLE_NAME_LEN],int num,char *selectcol1,int amb1,int op1, int_or_char constant1,char *selectcol2,int amb2,int op2, int_or_char constant2,char *selectcol3_1,int amb3_1,int op3, char *selectcol3_2,int amb3_2){
-    printf("----------------------\n");
     char name1[128];
     char name2[128];
     int num1_store,num2_store;

@@ -19,7 +19,6 @@ int insert(char *table_name, int col, int_or_char *inchar){  //按行存储
     table_head head;
     
     fread(&head, sizeof(table_head), 1, fp);
-    printf("*********insert:%s\n",head.col_name[0] );
     if (head.col_num != col) {
         printf("Wrong number of columns\n");  //列数不对
         return  -1;
